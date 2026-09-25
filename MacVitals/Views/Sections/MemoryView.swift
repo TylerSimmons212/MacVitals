@@ -41,21 +41,11 @@ struct MemoryView: View {
 
         return HStack(spacing: 22) {
             ZStack {
-                Circle().stroke(tint.opacity(0.15), lineWidth: 12)
-                Circle()
-                    .trim(from: 0, to: min(1, fraction))
-                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.smooth(duration: 0.6), value: fraction)
+                GaugeRing(fraction: min(1, fraction), color: tint, lineWidth: 12)
                 // Number and unit on separate lines so it never wraps mid-value:
                 // "12.4" big, "of 16 GB" small (the unit reads across both).
                 VStack(spacing: 0) {
-                    Text(Fmt.gigabytesNumber(memory.used))
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .rollingNumber(Fmt.gigabytesNumber(memory.used))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                    RollingText(Fmt.gigabytesNumber(memory.used), size: 30)
                     Text("of \(Fmt.gigabytesNumber(memory.total, digits: 0)) GB")
                         .font(.caption)
                         .foregroundStyle(.secondary)

@@ -57,15 +57,9 @@ struct StartupItemsView: View {
         let tint: Color = broken > 0 ? .orange : Theme.cleanup
         return HStack(spacing: 22) {
             ZStack {
-                Circle().stroke(tint.opacity(0.15), lineWidth: 12)
-                Circle()
-                    .trim(from: 0, to: total == 0 ? 0 : Double(running) / Double(total))
-                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
+                GaugeRing(fraction: total == 0 ? 0 : Double(running) / Double(total), color: tint, lineWidth: 12)
                 VStack(spacing: 0) {
-                    Text("\(total)")
-                        .font(.system(size: 30, weight: .bold, design: .rounded)).monospacedDigit()
-                        .rollingNumber(total)
+                    RollingText("\(total)", size: 30)
                     Text("start automatically").font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 14)

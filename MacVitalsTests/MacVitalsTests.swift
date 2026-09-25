@@ -1599,3 +1599,62 @@ struct StartupItemsTests {
         #expect(!StartupInventory.scan().isEmpty)
     }
 }
+
+@Suite("Rolling text")
+@MainActor
+struct RollingTextTests {
+    private func glyphs(_ view: RollingTextView) -> [CALayer] {
+        (view.layer?.sublayers?.first?.sublayers ?? []).sorted { $0.position.x < $1.position.x }
+    }
+
+    private func snapshot(_ view: RollingTextView, _ name: String) {
+        guard let dir = ProcessInfo.processInfo.environment["SNAPSHOT_DIR"], let layer = view.layer else { return }
+        let scale: CGFloat = 2
+        let size = CGSize(width: view.bounds.width * scale, height: view.bounds.height * scale)
+        guard let ctx = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8,
+                                  bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+        ctx.setFillColor(NSColor.white.cgColor)
+        ctx.fill(CGRect(origin: .zero, size: size))
+        ctx.scaleBy(x: scale, y: scale)
+        layer.render(in: ctx)
+        if let image = ctx.makeImage() {
+            let rep = NSBitmapImageRep(cgImage: image)
+            try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(name).png"))
+        }
+    }
+
+    @Test func onlyChangedCharactersAreReplaced() {
+        let view = RollingTextView(frame: CGRect(x: 0, y: 0, width: 120, height: 40))
+        let font = RollingTextView.font(size: 30, weight: .bold, rounded: true)
+        view.update(text: "9%", font: font, color: .black, alignment: .center, animated: true)
+        view.layout()
+        #expect(glyphs(view).count == 2)
+        snapshot(view, "rolling-9")
+        let percent = glyphs(view).last
+
+        view.update(text: "10%", font: font, color: .black, alignment: .center, animated: false)
+        view.layout()
+        let after = glyphs(view)
+        #expect(after.count == 3)
+        #expect(after.last === percent) // the "%" is kept and slides; only digits change
+        #expect(zip(after, after.dropFirst()).allSatisfy { $0.frame.maxX <= $1.frame.minX + 0.5 })
+        snapshot(view, "rolling-10")
+
+        // Animated change: the old digit stays (fading out) until its roll finishes.
+        view.update(text: "12%", font: font, color: .black, alignment: .center, animated: true)
+        view.layout()
+        #expect(glyphs(view).count == 4)
+        #expect(glyphs(view).filter { $0.opacity > 0 }.count == 3)
+    }
+
+    @Test func naturalSizeFitsTheText() {
+        let font = RollingTextView.font(size: 30, weight: .bold, rounded: true)
+        let wide = RollingTextView.naturalSize("100%", font: font)
+        let narrow = RollingTextView.naturalSize("9%", font: font)
+        #expect(wide.width > narrow.width)
+        #expect(wide.height == narrow.height)
+        // Monospaced digits: every digit is the same width, so columns don't jitter.
+        #expect(RollingTextView.width(of: "1", font: font) == RollingTextView.width(of: "8", font: font))
+    }
+}

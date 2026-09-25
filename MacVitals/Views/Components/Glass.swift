@@ -97,7 +97,9 @@ extension View {
             .glassEffect(glass, in: .capsule)
     }
 
-    /// Digits roll to their new value. Animation is scoped to this view only.
+    /// Digits roll to their new value. Use only for values that change *rarely* (health score,
+    /// counts). Rolling values that change every refresh keeps SwiftUI animating nonstop, which
+    /// was a large part of the dashboard's CPU cost.
     func rollingNumber<V: Equatable>(_ value: V) -> some View {
         self
             .contentTransition(.numericText())

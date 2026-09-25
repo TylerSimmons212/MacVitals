@@ -35,7 +35,7 @@ struct MetricTile<Visual: View>: View {
                 Text(value)
                     .font(.system(size: 26, weight: .semibold, design: .rounded))
                     .monospacedDigit()
-                    .rollingNumber(value)
+
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 Text(caption)
@@ -73,17 +73,13 @@ struct CoreStrip: View {
                 }
             }
         }
-        .animation(.smooth(duration: 0.5), value: values)
+
     }
 
     private func bar(_ value: Double) -> some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 2.5).fill(.quaternary)
-                RoundedRectangle(cornerRadius: 2.5)
-                    .fill(value > 85 ? AnyShapeStyle(Color.red.gradient) : AnyShapeStyle(tint.gradient))
-                    .frame(height: max(2, proxy.size.height * min(1, value / 100)))
-            }
+        ZStack {
+            RoundedRectangle(cornerRadius: 2.5).fill(.quaternary)
+            LayerBar(fraction: max(0.03, value / 100), color: value > 85 ? .red : tint, axis: .vertical, cornerRadius: 2.5)
         }
     }
 }
@@ -127,21 +123,22 @@ struct CapacityGauge: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(.quaternary)
-                    Capsule()
-                        .fill(color.gradient)
-                        .frame(width: proxy.size.width * min(1, max(0, usedFraction)))
+            ZStack {
+                Capsule().fill(.quaternary)
+                LayerBar(fraction: usedFraction, color: color)
+            }
+            .frame(height: 12)
+            .overlay {
+                // Static tick marks at the 85% / 95% danger lines (not animated, so no layout churn).
+                GeometryReader { proxy in
                     ForEach([0.85, 0.95], id: \.self) { mark in
                         Rectangle()
                             .fill(.primary.opacity(0.25))
                             .frame(width: 1.5, height: proxy.size.height + 4)
-                            .offset(x: proxy.size.width * mark)
+                            .offset(x: proxy.size.width * mark, y: -2)
                     }
                 }
             }
-            .frame(height: 12)
             HStack {
                 Text("\(Fmt.percent(usedFraction * 100)) used")
                 Spacer()
@@ -149,7 +146,7 @@ struct CapacityGauge: View {
             .font(.caption2)
             .foregroundStyle(.secondary)
         }
-        .animation(.smooth(duration: 0.8), value: usedFraction)
+
     }
 
     private var color: Color {
@@ -206,7 +203,7 @@ struct SegmentMeter: View {
             }
         }
         .frame(height: 10)
-        .animation(.smooth(duration: 0.4), value: level)
+        // Snaps like an audio meter; animating it every refresh kept SwiftUI busy for nothing.
     }
 }
 
@@ -218,22 +215,17 @@ struct BatteryGlyph: View {
 
     var body: some View {
         HStack(spacing: 3) {
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 6)
-                        .strokeBorder(.secondary.opacity(0.5), lineWidth: 1.5)
-                    RoundedRectangle(cornerRadius: 3.5)
-                        .fill(fill.gradient)
-                        .padding(3)
-                        .frame(width: max(10, proxy.size.width * min(1, percent / 100)))
-                    if charging {
-                        Image(systemName: "bolt.fill")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
-                            .shadow(radius: 2)
-                            .frame(maxWidth: .infinity)
-                            .transition(.scale.combined(with: .opacity))
-                    }
+            ZStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(.secondary.opacity(0.5), lineWidth: 1.5)
+                LayerBar(fraction: max(0.08, percent / 100), color: fill, cornerRadius: 3.5)
+                    .padding(3)
+                if charging {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(.white)
+                        .shadow(radius: 2)
+                        .transition(.scale.combined(with: .opacity))
                 }
             }
             RoundedRectangle(cornerRadius: 1.5)
@@ -242,7 +234,6 @@ struct BatteryGlyph: View {
         }
         .frame(height: 26)
         .frame(maxHeight: .infinity, alignment: .bottom)
-        .animation(.smooth(duration: 0.8), value: percent)
         .animation(.spring, value: charging)
     }
 

@@ -221,7 +221,7 @@ struct StatValue: View {
                 .font(.title3.weight(.semibold))
                 .monospacedDigit()
                 .foregroundStyle(tint ?? .primary)
-                .rollingNumber(value)
+
             if let caption {
                 Text(caption)
                     .font(.caption2)

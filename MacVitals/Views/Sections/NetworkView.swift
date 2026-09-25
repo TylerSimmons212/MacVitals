@@ -142,20 +142,12 @@ struct NetworkView: View {
 
         return HStack(spacing: 22) {
             ZStack {
-                Circle().stroke(tint.opacity(0.15), lineWidth: 12)
-                Circle()
-                    .trim(from: 0, to: level.quality / 100)
-                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.smooth(duration: 0.6), value: level.quality)
+                GaugeRing(fraction: level.quality / 100, color: tint, lineWidth: 12)
                 if level == .checking {
                     ProgressView().controlSize(.small)
                 } else {
                     VStack(spacing: 0) {
-                        Text(latency.map { String(format: "%.0f", $0) } ?? "—")
-                            .font(.system(size: 30, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .rollingNumber(latency.map { Int($0) } ?? -1)
+                        RollingText(latency.map { String(format: "%.0f", $0) } ?? "—", size: 30)
                         Text(latency == nil ? "no response" : "ms response")
                             .font(.caption)
                             .foregroundStyle(.secondary)
