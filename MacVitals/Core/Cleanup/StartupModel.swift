@@ -10,6 +10,9 @@ final class StartupModel {
     private(set) var phase: Phase = .idle
     private(set) var items: [StartupItem] = []
     private(set) var busy: Set<String> = []
+    /// Whether the list includes everything macOS tracks (needs your password once per session).
+    private(set) var isComplete = StartupInventory.isComplete
+    private(set) var isUnlocking = false
 
     var broken: [StartupItem] { items.filter(\.isBroken) }
     func items(of kind: StartupItem.Kind) -> [StartupItem] { items.filter { $0.kind == kind && !$0.isBroken } }
@@ -20,7 +23,19 @@ final class StartupModel {
         guard phase != .scanning else { return }
         if items.isEmpty { phase = .scanning }
         items = await Task.detached(priority: .userInitiated) { StartupInventory.scan() }.value
+        isComplete = StartupInventory.isComplete
         phase = .ready
+    }
+
+    /// Reads macOS's complete list after asking for your password (Mac Vitals' own prompt).
+    func loadCompleteList() async {
+        guard !isUnlocking else { return }
+        isUnlocking = true
+        // Let the "Waiting for your password" state render before the prompt takes over.
+        try? await Task.sleep(for: .milliseconds(150))
+        let unlocked = BTMAccess.readWithPassword()
+        isUnlocking = false
+        if unlocked { await scan() }
     }
 
     /// Reversible off/on for your own background helpers.

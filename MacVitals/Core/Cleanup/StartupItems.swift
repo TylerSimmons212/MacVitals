@@ -185,10 +185,48 @@ enum BTMParser {
         return records
     }
 
-    /// Reads the live database. Works without admin rights.
-    static func read() -> [Record] {
-        guard let output = try? Shell.run("/usr/bin/sfltool", ["dumpbtm"]), !output.isEmpty else { return [] }
-        return parse(output)
+}
+
+/// macOS's complete list (the Background Task Management database) now needs an admin password
+/// to read: running `sfltool dumpbtm` directly pops a system prompt titled "sfltool", which
+/// looks like something suspicious. So Mac Vitals never runs it in the background. It reads the
+/// list only when you ask, through its own password prompt that says who's asking and why, and
+/// keeps the result for this session.
+enum BTMAccess {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var snapshot: (records: [BTMParser.Record], date: Date)?
+
+    static var records: [BTMParser.Record]? {
+        lock.lock(); defer { lock.unlock() }
+        return snapshot?.records
+    }
+
+    static var loadedAt: Date? {
+        lock.lock(); defer { lock.unlock() }
+        return snapshot?.date
+    }
+
+    static func store(_ records: [BTMParser.Record]) {
+        lock.lock(); defer { lock.unlock() }
+        snapshot = (records, Date())
+    }
+
+    static let prompt = "Mac Vitals needs your password to read macOS's complete list of login items and background helpers. It only reads the list. Nothing is changed."
+
+    /// Shows macOS's password prompt on behalf of Mac Vitals (not "sfltool"). Returns false if
+    /// cancelled. Runs on the main thread (AppleScript requirement) and blocks only while
+    /// the prompt is up and the list is read.
+    @MainActor
+    static func readWithPassword() -> Bool {
+        let source = """
+        do shell script "/usr/bin/sfltool dumpbtm" with prompt "\(prompt)" with administrator privileges without altering line endings
+        """
+        var error: NSDictionary?
+        guard let output = NSAppleScript(source: source)?.executeAndReturnError(&error).stringValue, !output.isEmpty else { return false }
+        let records = BTMParser.parse(output)
+        guard !records.isEmpty else { return false }
+        store(records)
+        return true
     }
 }
 
@@ -201,7 +239,7 @@ enum StartupInventory {
         return path.hasPrefix(prefix) ? home + "/" + path.dropFirst(prefix.count) : path
     }
 
-    static func items(from records: [BTMRecordSource] = [.live], uid: uid_t = getuid(),
+    static func items(from records: [BTMRecordSource] = [.cached], uid: uid_t = getuid(),
                       home: String = FileManager.default.homeDirectoryForCurrentUser.path,
                       running: Set<String> = [], disabledLabels: Set<String> = []) -> [StartupItem] {
         let all = records.flatMap { $0.records() }
@@ -249,12 +287,13 @@ enum StartupInventory {
     }
 
     enum BTMRecordSource: Sendable {
-        case live
+        /// What you allowed Mac Vitals to read this session (empty until then).
+        case cached
         case parsed([BTMParser.Record])
 
         func records() -> [BTMParser.Record] {
             switch self {
-            case .live: BTMParser.read()
+            case .cached: BTMAccess.records ?? []
             case .parsed(let records): records
             }
         }
@@ -324,13 +363,94 @@ enum StartupInventory {
         })
     }
 
+    /// Never asks for a password. Uses macOS's complete list if you unlocked it this session;
+    /// otherwise the launchd folders plus helpers inside installed apps that are active.
     static func scan() -> [StartupItem] {
         let running = runningLabels()
         let disabled = disabledLabels()
         var found = items(running: running, disabledLabels: disabled)
-        // If the BTM format ever changes and we can't parse it, fall back to the launchd folders.
-        if found.isEmpty { found = folderItems(running: running, disabledLabels: disabled) }
+        var labels = Set(found.map(\.label))
+        // Anything added since the complete list was read (or everything, without it).
+        for item in folderItems(running: running, disabledLabels: disabled) + embeddedItems(running: running)
+        where !labels.contains(item.label) {
+            labels.insert(item.label)
+            found.append(item)
+        }
         return found.sorted { ($0.isBroken ? 0 : 1, $0.name.lowercased()) < ($1.isBroken ? 0 : 1, $1.name.lowercased()) }
+    }
+
+    /// True when the list includes everything macOS tracks (login items, app-managed helpers).
+    static var isComplete: Bool { BTMAccess.records != nil }
+
+    /// Helpers apps register from inside their own bundle (SMAppService): background agents,
+    /// system daemons and login-item apps. Only ones that are actually active are listed:
+    /// loaded in launchd (agents) or running (daemons, login-item apps).
+    static func embeddedItems(apps: [URL] = AppInventory.appBundles(), running: Set<String>,
+                              loaded: Set<String> = loadedLabels(),
+                              runningPaths: Set<String> = runningExecutablePaths()) -> [StartupItem] {
+        let fm = FileManager.default
+        var items: [StartupItem] = []
+        for app in apps {
+            let appName = (app.lastPathComponent as NSString).deletingPathExtension
+            let library = app.appending(path: "Contents/Library")
+            for (folder, kind) in [("LaunchAgents", StartupItem.Kind.agent), ("LaunchDaemons", .daemon)] {
+                let dir = library.appending(path: folder)
+                for file in (try? fm.contentsOfDirectory(atPath: dir.path)) ?? [] where file.hasSuffix(".plist") {
+                    let path = dir.appending(path: file).path
+                    guard let data = fm.contents(atPath: path),
+                          let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+                          let label = plist["Label"] as? String else { continue }
+                    let relative = plist["BundleProgram"] as? String ?? plist["Program"] as? String ?? (plist["ProgramArguments"] as? [String])?.first
+                    let program = relative.map { $0.hasPrefix("/") ? $0 : app.appending(path: $0).path }
+                    let active = kind == .agent ? loaded.contains(label) : program.map(runningPaths.contains) ?? false
+                    guard active else { continue }
+                    var item = StartupItem(label: label, name: friendlyName(label, appName: appName), kind: kind, developer: nil,
+                                           appName: appName, appPath: app.path, plistPath: path, executablePath: program,
+                                           isEnabled: true, lastRun: nil)
+                    item.isRunning = running.contains(label) || (program.map(runningPaths.contains) ?? false)
+                    item.schedule = schedule(of: plist)
+                    items.append(item)
+                }
+            }
+            let loginItems = library.appending(path: "LoginItems")
+            for file in (try? fm.contentsOfDirectory(atPath: loginItems.path)) ?? [] where file.hasSuffix(".app") {
+                let helper = loginItems.appending(path: file)
+                let bundle = Bundle(url: helper)
+                guard let executable = bundle?.executableURL?.path, runningPaths.contains(executable) else { continue }
+                let label = bundle?.bundleIdentifier ?? file
+                let displayName = (bundle?.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
+                    ?? (bundle?.object(forInfoDictionaryKey: "CFBundleName") as? String)
+                    ?? (file as NSString).deletingPathExtension
+                var item = StartupItem(label: label, name: friendlyName(displayName.replacingOccurrences(of: "_", with: " "), appName: appName),
+                                       kind: .loginItem, developer: nil, appName: appName, appPath: app.path,
+                                       plistPath: nil, executablePath: executable, isEnabled: true, lastRun: nil)
+                item.isRunning = true
+                item.schedule = .atLogin
+                items.append(item)
+            }
+        }
+        return items
+    }
+
+    /// Every label launchd has loaded for this user, running or not.
+    static func loadedLabels() -> Set<String> {
+        guard let output = try? Shell.run("/bin/launchctl", ["list"]) else { return [] }
+        return Set(output.split(separator: "\n").dropFirst().compactMap { line in
+            let parts = line.split(separator: "\t")
+            return parts.count == 3 ? String(parts[2]) : nil
+        })
+    }
+
+    /// Executable paths of running processes (including system ones; paths are readable).
+    static func runningExecutablePaths() -> Set<String> {
+        var pids = [pid_t](repeating: 0, count: 4096)
+        let count = Int(proc_listallpids(&pids, Int32(pids.count * MemoryLayout<pid_t>.size)))
+        var paths: Set<String> = []
+        var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN) * 4)
+        for pid in pids.prefix(max(0, count)) where pid > 0 {
+            if proc_pidpath(pid, &buffer, UInt32(buffer.count)) > 0 { paths.insert(String(cString: buffer)) }
+        }
+        return paths
     }
 
     /// Fallback: read launchd plists straight from the standard folders.
