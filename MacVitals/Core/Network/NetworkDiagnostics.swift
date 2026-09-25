@@ -14,6 +14,8 @@ struct WiFiInfo: Equatable, Sendable {
     let channel: Int?
     let band: Int?         // CWChannelBand raw value
     let width: Int?        // CWChannelWidth raw value
+    /// Network name. macOS only reveals it once Location is allowed (it counts as location data).
+    var ssid: String? = nil
 
     var signalToNoise: Int { rssi - noise }
 
@@ -50,8 +52,8 @@ struct WiFiInfo: Equatable, Sendable {
         }
     }
 
-    /// Current Wi-Fi link, or nil if Wi-Fi is off / not connected. No permissions needed
-    /// (only the network *name* requires Location access, which we don't ask for).
+    /// Current Wi-Fi link, or nil if Wi-Fi is off / not connected. No permissions needed, except
+    /// the network *name*, which macOS returns only when Location is allowed (nil otherwise).
     static func current() -> WiFiInfo? {
         guard let iface = CWWiFiClient.shared().interface(), iface.powerOn(), iface.rssiValue() != 0 else { return nil }
         let channel = iface.wlanChannel()
@@ -63,7 +65,8 @@ struct WiFiInfo: Equatable, Sendable {
             phyMode: iface.activePHYMode().rawValue,
             channel: channel?.channelNumber,
             band: channel?.channelBand.rawValue,
-            width: channel?.channelWidth.rawValue
+            width: channel?.channelWidth.rawValue,
+            ssid: iface.ssid()
         )
     }
 }

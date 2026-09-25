@@ -113,12 +113,13 @@ struct JunkView: View {
             if scan.needsAccess {
                 HStack(spacing: 10) {
                     Image(systemName: "lock").foregroundStyle(.orange)
-                    Text("macOS blocked part of this scan. Allow Full Disk Access to include it.")
+                    Text(permissions.isWaitingForFullDiskAccess
+                         ? "Waiting for Full Disk Access. Drag Mac Vitals into the list in System Settings."
+                         : "macOS blocked part of this scan. Allow Full Disk Access to include it.")
                         .font(.callout).foregroundStyle(.secondary)
                     Spacer()
                     Button("Allow Access") {
-                        permissions.onFullDiskAccessGranted = { Task { await engine.scan() } }
-                        permissions.requestFullDiskAccess()
+                        permissions.request(.fullDiskAccess) { Task { await engine.scan() } }
                     }
                     .buttonStyle(.glass).controlSize(.small).pointerStyle(.link)
                 }

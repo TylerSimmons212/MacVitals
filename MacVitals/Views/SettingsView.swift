@@ -2,6 +2,49 @@ import SwiftUI
 import ServiceManagement
 
 struct SettingsView: View {
+    var body: some View {
+        TabView {
+            Tab("General", systemImage: "gearshape") { GeneralSettings() }
+            Tab("Permissions", systemImage: "hand.raised") { PermissionSettings() }
+        }
+        .scenePadding()
+        .frame(width: 560)
+    }
+}
+
+/// Every permission, what it unlocks, and its live status. Changes made in System Settings show
+/// up as soon as you come back.
+private struct PermissionSettings: View {
+    @Environment(Permissions.self) private var permissions
+    @AppStorage(SettingsKeys.hasSeenWelcome) private var hasSeenWelcome = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("All optional. Mac Vitals works without them; each one lets it see or do a little more.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            PermissionList()
+                .padding(.horizontal, 14)
+                .padding(.vertical, 4)
+                .background(RoundedRectangle(cornerRadius: 14).fill(Color.primary.opacity(0.04)))
+            HStack {
+                Text("Turn any of these off in System Settings › Privacy & Security.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                Spacer()
+                Button("Show Welcome Again") { hasSeenWelcome = false }
+                    .buttonStyle(.link)
+                    .font(.caption)
+                    .pointerStyle(.link)
+                    .help("Opens the welcome screen in the Mac Vitals window")
+            }
+        }
+        .onAppear { permissions.refreshAll() }
+    }
+}
+
+private struct GeneralSettings: View {
     @AppStorage(SettingsKeys.refreshInterval) private var refreshInterval = 2.0
     @AppStorage(SettingsKeys.cleanupDeletesPermanently) private var deletePermanently = false
     @AppStorage(SettingsKeys.ambientMotion) private var ambientMotion = true
@@ -46,7 +89,6 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460)
         .fixedSize(horizontal: false, vertical: true)
     }
 }

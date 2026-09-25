@@ -503,8 +503,7 @@ private struct StorageBreakdownCard: View {
 
             if storage.needsFullDiskAccess && !permissions.hasFullDiskAccess {
                 FullDiskAccessBanner {
-                    permissions.onFullDiskAccessGranted = { Task { await storage.scan() } }
-                    permissions.requestFullDiskAccess()
+                    permissions.request(.fullDiskAccess) { Task { await storage.scan() } }
                 }
             }
             if storage.needsFolderAccess {

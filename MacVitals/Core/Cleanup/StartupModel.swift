@@ -34,17 +34,29 @@ final class StartupModel {
     }
 
     /// Removes a broken helper's plist via the Trash (so it can be put back), after stopping it.
+    /// Items installed for all users come back as "needs your password", and the result
+    /// banner finishes them through Finder.
     func remove(_ item: StartupItem, engine: CleanupEngine) async {
-        guard item.isUserManageable, let plist = item.plistPath else { return }
+        guard let plist = item.plistPath else { return }
         busy.insert(item.id)
         defer { busy.remove(item.id) }
         let record = await Task.detached(priority: .userInitiated) { () -> CleanupRecord in
-            _ = LaunchctlController.turnOff(item)
+            if item.isUserManageable { _ = LaunchctlController.turnOff(item) }
             let size = (try? FileManager.default.attributesOfItem(atPath: plist)[.size] as? Int64) ?? 0
             return CleanupRemover.remove([JunkItem(path: plist, name: "\(item.name) (startup item)",
                                                    detail: plist, size: size, tier: .safe)], permanently: false)
         }.value
         engine.record(record)
+        await scan()
+    }
+
+    /// System-wide items (in /Library): Finder moves them to the Trash after your password.
+    func removeWithFinder(_ item: StartupItem, engine: CleanupEngine) async {
+        guard let plist = item.plistPath else { return }
+        busy.insert(item.id)
+        defer { busy.remove(item.id) }
+        let size = (try? FileManager.default.attributesOfItem(atPath: plist)[.size] as? Int64) ?? 0
+        await engine.removeWithFinder([JunkItem(path: plist, name: "\(item.name) (startup item)", detail: plist, size: size, tier: .safe)])
         await scan()
     }
 

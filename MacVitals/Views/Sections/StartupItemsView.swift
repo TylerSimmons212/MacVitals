@@ -6,6 +6,7 @@ import SwiftUI
 struct StartupItemsView: View {
     @Environment(StartupModel.self) private var model
     @Environment(CleanupEngine.self) private var engine
+    @Environment(Permissions.self) private var permissions
     @State private var pendingRemoval: StartupItem?
 
     var body: some View {
@@ -36,14 +37,23 @@ struct StartupItemsView: View {
         }
         .task { await model.scan() }
         .onChange(of: engine.putBackCount) { Task { await model.scan() } }
+        .onChange(of: engine.resolvedCount) { Task { await model.scan() } }
         .animation(.spring(response: 0.5, dampingFraction: 0.82), value: model.items.map(\.id))
         .animation(.spring(response: 0.5, dampingFraction: 0.82), value: engine.lastRecord?.id)
         .confirmationDialog(pendingRemoval.map { "Remove \($0.name)?" } ?? "",
                             isPresented: Binding(get: { pendingRemoval != nil }, set: { if !$0 { pendingRemoval = nil } }),
                             presenting: pendingRemoval) { item in
-            Button("Move to Trash", role: .destructive) { Task { await model.remove(item, engine: engine) } }
-        } message: { _ in
-            Text("Its app is already gone, so this can't run anyway. It goes to the Trash, and you can put it back.")
+            Button("Move to Trash", role: .destructive) {
+                if item.isUserManageable {
+                    Task { await model.remove(item, engine: engine) }
+                } else {
+                    permissions.request(.finder) { Task { await model.removeWithFinder(item, engine: engine) } }
+                }
+            }
+        } message: { item in
+            Text(item.isUserManageable
+                 ? "Its app is already gone, so this can't run anyway. It goes to the Trash, and you can put it back."
+                 : "Its app is already gone, so this can't run anyway. It was installed for all users, so Finder will ask for your password to move it to the Trash.")
         }
     }
 
@@ -109,14 +119,9 @@ struct StartupItemsView: View {
                 ForEach(Array(model.broken.enumerated()), id: \.element.id) { index, item in
                     if index > 0 { Divider() }
                     StartupRow(item: item, busy: model.busy.contains(item.id)) {
-                        if item.isUserManageable {
-                            Button("Remove") { pendingRemoval = item }
-                                .buttonStyle(.glass).controlSize(.small).pointerStyle(.link)
-                        } else {
-                            Button("Reveal") { ProcessController.revealInFinder(item.plistPath ?? "/Library/LaunchDaemons") }
-                                .buttonStyle(.glass).controlSize(.small).pointerStyle(.link)
-                                .help("Installed for all users. Removing it needs your admin password in Finder.")
-                        }
+                        Button("Remove") { pendingRemoval = item }
+                            .buttonStyle(.glass).controlSize(.small).pointerStyle(.link)
+                            .help(item.isUserManageable ? "Move it to the Trash" : "Installed for all users: Finder will ask for your password")
                     }
                 }
             }

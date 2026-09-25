@@ -54,6 +54,12 @@ final class UninstallerModel {
         }
     }
 
+    /// Drops apps that are no longer on disk (e.g. finished through Finder or after allowing
+    /// App Management).
+    func pruneRemoved() {
+        apps.removeAll { !FileManager.default.fileExists(atPath: $0.path) }
+    }
+
     func isRunning(_ app: InstalledApp) -> Bool {
         NSWorkspace.shared.runningApplications.contains { $0.bundleURL?.path == app.path }
     }

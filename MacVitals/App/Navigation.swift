@@ -65,4 +65,5 @@ enum SettingsKeys {
     static let cleanupDeletesPermanently = "cleanupDeletesPermanently"
     static let ambientMotion = "ambientMotion"
     static let showDashboardAtLaunch = "showDashboardAtLaunch"
+    static let hasSeenWelcome = "hasSeenWelcome"
 }

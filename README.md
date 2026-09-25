@@ -49,6 +49,26 @@ MacVitalsTests/
   No charts, no scrolling.
 - **Main window**: investigate and manage. History charts, full apps table, cleanup review, dev servers.
 
+## Permissions
+
+All optional; the app works without any. First launch shows a welcome screen that explains each one by
+what it unlocks; Settings › Permissions shows live status. Pages also ask in context, exactly where
+something is missing.
+
+| Permission | Unlocks | How it's granted / detected |
+|---|---|---|
+| Full Disk Access | Trash, Mail/Messages, iPhone backups, app containers in Storage & Clean Up | Settings list + floating drag helper; detected by probing a protected file |
+| Location | Wi-Fi network name on the Network page (macOS treats it as location) | System prompt; never requests a location |
+| App Management | Uninstaller moving apps to the Trash | Settings list + helper with a Done button. macOS offers no way to check it (its record stays locked even with Full Disk Access), so status comes from the last real uninstall, and a blocked uninstall offers the fix |
+| Automation › Finder | Removing items installed for all users (Finder asks for the admin password) | System prompt via `AEDeterminePermissionToAutomateTarget` |
+
+Blocked removals are classified by what fixes them (`RemovalBlocker`: EPERM on an app → App Management,
+EPERM elsewhere → Full Disk Access, EACCES → admin via Finder), and the result banner offers that one fix.
+
+**Signing matters:** macOS remembers these permissions by code signature. Builds are signed with a stable
+Developer ID (`project.yml`); ad-hoc signing made every rebuild look like a new app and silently dropped
+them. Release omits `get-task-allow` so it can be notarized.
+
 ## Performance rules (measured, Release build, M1 Pro)
 
 | State | CPU (% of one core) |
@@ -81,8 +101,8 @@ Charts, Liquid Glass and large lists measured as cheap; animation was the cost.
 
 ## Known gaps / next
 
-- Notifications on critical changes (rate-limited)
 - SSD wear level and total data written (Disk › Under the hood)
 - Clean Up extras: duplicates, a small honest maintenance set, Mail attachments
+- Notifications on critical changes (needs the Notifications permission; would join the Permissions list)
 - Privileged helper for root-owned processes (currently skipped), temperatures/fans (SMC)
 - "Not Responding" detection for apps (needs Accessibility permission)

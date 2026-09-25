@@ -11,9 +11,12 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
+    # One stable identity for every build. macOS remembers privacy permissions (Full Disk Access,
+    # Location, Automation…) by code signature; ad-hoc signing ("-") made every rebuild a "new app"
+    # and silently dropped them.
     CODE_SIGN_STYLE: Manual
-    CODE_SIGN_IDENTITY: "-"
-    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_IDENTITY: "Developer ID Application"
+    DEVELOPMENT_TEAM: 7MGPA96634
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 
 targets:
@@ -34,6 +37,12 @@ targets:
         INFOPLIST_KEY_NSDocumentsFolderUsageDescription: "Mac Vitals measures how much space your Documents folder uses. It only reads sizes, never file contents, and nothing leaves your Mac."
         INFOPLIST_KEY_NSDesktopFolderUsageDescription: "Mac Vitals measures how much space your Desktop uses. It only reads sizes, never file contents, and nothing leaves your Mac."
         INFOPLIST_KEY_NSDownloadsFolderUsageDescription: "Mac Vitals measures your Downloads folder to find old installers and large files you might not need. Nothing leaves your Mac."
+        # Wi-Fi network names count as location data in macOS. We never look up where you are.
+        INFOPLIST_KEY_NSLocationUsageDescription: "macOS treats your Wi-Fi network's name as location data. Mac Vitals uses it only to show which network you're on. It never looks up where you are, and nothing leaves your Mac."
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "macOS treats your Wi-Fi network's name as location data. Mac Vitals uses it only to show which network you're on. It never looks up where you are, and nothing leaves your Mac."
+        # Finder moves items that belong to all users to the Trash (it asks for your password).
+        INFOPLIST_KEY_NSAppleEventsUsageDescription: "Mac Vitals asks Finder to move protected items (like apps installed for all users) to the Trash. Finder asks for your password, and nothing is deleted until you empty the Trash."
+        CODE_SIGN_ENTITLEMENTS: MacVitals/MacVitals.entitlements
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Tyler Simmons"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -43,6 +52,8 @@ targets:
       configs:
         Release:
           ENABLE_HARDENED_RUNTIME: YES
+          # No debugger entitlement in Release (notarization rejects it).
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
     scheme:
       testTargets:
         - MacVitalsTests
