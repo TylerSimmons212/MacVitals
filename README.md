@@ -33,6 +33,8 @@ MacVitals/
     Health.swift  health score + vital-signs checklist (pure, unit-tested)
     SystemMonitor sampling loop, history, visibility-aware publishing
     Cleanup/      cleanup scanner + model
+    Protection/   built-in defences, startup-item and app signature audits
+    SpaceLens/    getattrlistbulk size scanner, sunburst layout
     Ports/        listening-port / dev-server scanner
   Views/
     Components/   glass cards, tile visuals, charts, visibility tracking
