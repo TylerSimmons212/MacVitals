@@ -58,12 +58,7 @@ struct DiskView: View {
                 GaugeRing(fraction: min(1, disk.usedPercent / 100), color: tint, lineWidth: 12)
                 // Number and unit on separate lines so it never wraps mid-value.
                 VStack(spacing: 0) {
-                    Text(free.number)
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .rollingNumber(free.number)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                    RollingText(free.number, size: 30)
                     Text("\(free.unit) free")
                         .font(.caption)
                         .foregroundStyle(.secondary)

@@ -49,10 +49,7 @@ struct BatteryView: View {
                 GaugeRing(fraction: min(1, battery.percent / 100), color: chargeTint, lineWidth: 12)
                 VStack(spacing: 0) {
                     HStack(alignment: .firstTextBaseline, spacing: 1) {
-                        Text(String(format: "%.0f", battery.percent))
-                            .font(.system(size: 30, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .rollingNumber(Int(battery.percent))
+                        RollingText(String(format: "%.0f", battery.percent), size: 30)
                         Text("%").font(.system(size: 16, weight: .semibold, design: .rounded))
                     }
                     Image(systemName: battery.isCharging ? "bolt.fill" : (battery.isPluggedIn ? "powerplug.fill" : "battery.75percent"))

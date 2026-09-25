@@ -85,10 +85,7 @@ struct PortsView: View {
             ZStack {
                 GaugeRing(fraction: count == 0 ? 0 : Double(count - idle) / Double(count), color: tint, lineWidth: 12)
                 VStack(spacing: 0) {
-                    Text("\(count)")
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .rollingNumber(count)
+                    RollingText("\(count)", size: 30)
                     Text(count == 1 ? "server" : "servers").font(.caption).foregroundStyle(.secondary)
                 }
             }

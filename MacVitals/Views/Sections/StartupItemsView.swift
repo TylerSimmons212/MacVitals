@@ -59,9 +59,7 @@ struct StartupItemsView: View {
             ZStack {
                 GaugeRing(fraction: total == 0 ? 0 : Double(running) / Double(total), color: tint, lineWidth: 12)
                 VStack(spacing: 0) {
-                    Text("\(total)")
-                        .font(.system(size: 30, weight: .bold, design: .rounded)).monospacedDigit()
-                        .rollingNumber(total)
+                    RollingText("\(total)", size: 30)
                     Text("start automatically").font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 14)

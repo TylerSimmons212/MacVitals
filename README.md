@@ -66,7 +66,9 @@ Things that looked harmless and weren't:
    rolling numbers animating every 2s cost the CPU page 51% of a core. Now:
    - bars/rings/stacked bars use Core Animation (`LayerBar`, `LayerRing`/`GaugeRing`, `LayerSegments`),
      which glides in the render server with no per-frame work in our process
-   - `.rollingNumber` only for values that change rarely (health score, counts); `DetailStat(rolls:)` is opt-in
+   - rolling digits use `RollingText` (Core Animation, one layer per character; only changed digits roll).
+     SwiftUI's `.numericText()` on one hero number measured +10–17% per page. Roll the one number per page
+     people watch; supporting stats update crisply (`DetailStat(rolls:)` is opt-in)
    - list animations key on *status* (e.g. check severity), not on live text
 2. **Never wrap sample updates in a global `withAnimation`** (51% → 15% when removed).
 3. **No continuously animating views behind glass.** Motion is event-driven only.

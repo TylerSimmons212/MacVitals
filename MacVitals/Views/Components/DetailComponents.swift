@@ -9,8 +9,8 @@ struct DetailStat: View {
     var tint: Color? = nil
     var caption: String? = nil
     var help: String? = nil
-    /// Roll digits on change. Off by default: values that change every refresh should update
-    /// crisply (rolling them kept SwiftUI animating nearly nonstop).
+    /// Roll digits on change (Core Animation, so it's cheap). Off by default: reserve motion for
+    /// the numbers people watch; everything rolling at once is noise.
     var rolls = false
 
     var body: some View {
@@ -26,13 +26,16 @@ struct DetailStat: View {
                         .foregroundStyle(.tertiary)
                 }
             }
-            Text(value)
-                .font(.system(size: 24, weight: .semibold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(tint ?? .primary)
-                .modifier(RollingIf(enabled: rolls, value: value))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            if rolls {
+                RollingText(value, size: 24, weight: .semibold, color: tint, alignment: .leading, minimumScale: 0.7)
+            } else {
+                Text(value)
+                    .font(.system(size: 24, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(tint ?? .primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
             if let caption {
                 Text(caption)
                     .font(.caption)
@@ -64,13 +67,5 @@ struct InfoChip: View {
             Text(text).font(.callout.weight(.medium))
         }
         .glassChip(tint: tint == .secondary ? nil : tint)
-    }
-}
-
-private struct RollingIf: ViewModifier {
-    let enabled: Bool
-    let value: String
-    func body(content: Content) -> some View {
-        if enabled { content.rollingNumber(value) } else { content }
     }
 }

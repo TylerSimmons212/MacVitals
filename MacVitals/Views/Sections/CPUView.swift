@@ -43,10 +43,7 @@ struct CPUView: View {
                 Circle().stroke(tint.opacity(0.15), lineWidth: 12)
                 LayerRing(fraction: cpu.total / 100, color: tint, lineWidth: 12)
                 VStack(spacing: 0) {
-                    Text(Fmt.percent(cpu.total))
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-
+                    RollingText(Fmt.percent(cpu.total), size: 30)
                     Text("in use").font(.caption).foregroundStyle(.secondary)
                 }
             }

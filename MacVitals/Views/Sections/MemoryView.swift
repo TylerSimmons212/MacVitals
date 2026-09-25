@@ -45,12 +45,7 @@ struct MemoryView: View {
                 // Number and unit on separate lines so it never wraps mid-value:
                 // "12.4" big, "of 16 GB" small (the unit reads across both).
                 VStack(spacing: 0) {
-                    Text(Fmt.gigabytesNumber(memory.used))
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                    RollingText(Fmt.gigabytesNumber(memory.used), size: 30)
                     Text("of \(Fmt.gigabytesNumber(memory.total, digits: 0)) GB")
                         .font(.caption)
                         .foregroundStyle(.secondary)

@@ -147,10 +147,7 @@ struct NetworkView: View {
                     ProgressView().controlSize(.small)
                 } else {
                     VStack(spacing: 0) {
-                        Text(latency.map { String(format: "%.0f", $0) } ?? "—")
-                            .font(.system(size: 30, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-
+                        RollingText(latency.map { String(format: "%.0f", $0) } ?? "—", size: 30)
                         Text(latency == nil ? "no response" : "ms response")
                             .font(.caption)
                             .foregroundStyle(.secondary)

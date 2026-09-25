@@ -70,6 +70,7 @@
 		E3AEB8A8CE7512D80880442C /* DetailComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E1EF2C68F502A30DDE5E35 /* DetailComponents.swift */; };
 		EAAE98067729EB295D0FD4BC /* DockIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9E60886C850E1E5503AC893 /* DockIcon.swift */; };
 		EB6483D7BC35391CCFFB1E8A /* LayerGauges.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4114E46DEF820C66732A3E9 /* LayerGauges.swift */; };
+		EFA583B4B9F249C71413FAEF /* LayerRollingText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23A6D2A09D70BE321D085547 /* LayerRollingText.swift */; };
 		FC38BC7D45A63EFE3EDA737B /* MenuBarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EE11581B067D3C79FF1758 /* MenuBarViews.swift */; };
 		FCC8E242C9AEFFBBF8BDE253 /* BatteryInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264B5B14C9CE7780F454DC66 /* BatteryInsights.swift */; };
 		FDAD5EBD53319E9BB03EEE0F /* NetworkSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25EC9AC95E6E87EC7F1B48D3 /* NetworkSampler.swift */; };
@@ -94,6 +95,7 @@
 		1AB14DA5F5792B08B3A946FE /* MacVitals.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacVitals.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1ED48EA85974612F142B5BC2 /* DiskSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskSampler.swift; sourceTree = "<group>"; };
 		22E5158E7738C563C41A40D5 /* StartupModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupModel.swift; sourceTree = "<group>"; };
+		23A6D2A09D70BE321D085547 /* LayerRollingText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayerRollingText.swift; sourceTree = "<group>"; };
 		25EC9AC95E6E87EC7F1B48D3 /* NetworkSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkSampler.swift; sourceTree = "<group>"; };
 		264B5B14C9CE7780F454DC66 /* BatteryInsights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryInsights.swift; sourceTree = "<group>"; };
 		2671802F854D3CC5DEE8DA40 /* BatterySampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatterySampler.swift; sourceTree = "<group>"; };
@@ -328,6 +330,7 @@
 				5359D9624DB8ACE98CFA5D07 /* GuidePopover.swift */,
 				BE72F07628736EC3E98A4E4F /* HistoryRangePicker.swift */,
 				D4114E46DEF820C66732A3E9 /* LayerGauges.swift */,
+				23A6D2A09D70BE321D085547 /* LayerRollingText.swift */,
 				C9F2826C4E8B85750D31CBFF /* Theme.swift */,
 				EF1AE53D260B13BD78A4CAA7 /* TileVisuals.swift */,
 				EBC90EEC510750D400BFB3DF /* VisibilityTracker.swift */,
@@ -487,6 +490,7 @@
 				1D51E14C9320C9386DE98108 /* JunkScanners.swift in Sources */,
 				B59777F8A1CB094738766B0F /* JunkView.swift in Sources */,
 				EB6483D7BC35391CCFFB1E8A /* LayerGauges.swift in Sources */,
+				EFA583B4B9F249C71413FAEF /* LayerRollingText.swift in Sources */,
 				CA741611A8E42ACDD13C311D /* MacVitalsApp.swift in Sources */,
 				B2FFD3CC22F097767358AE05 /* MemoryInsights.swift in Sources */,
 				42D6A59DA58FE8880969ABD0 /* MemorySampler.swift in Sources */,

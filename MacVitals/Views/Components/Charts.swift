@@ -158,10 +158,7 @@ struct HealthRing: View {
             GaugeRing(fraction: Double(score) / 100, color: color, lineWidth: lineWidth)
             if showsLabel {
                 VStack(spacing: 0) {
-                    Text("\(score)")
-                        .font(.system(size: 40, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .rollingNumber(score)
+                    RollingText("\(score)", size: 40)
                     Text("Health")
                         .font(.caption)
                         .foregroundStyle(.secondary)

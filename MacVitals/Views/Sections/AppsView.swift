@@ -175,11 +175,13 @@ struct AppsView: View {
         return HStack(spacing: 16) {
             DetailStat(label: "Apps open", term: "Foreground",
                        value: "\(appCount)",
-                       caption: "Apps with windows in your Dock")
+                       caption: "Apps with windows in your Dock",
+                       rolls: true)
             DetailStat(label: "Background", term: "Agents",
                        value: "\(backgroundCount)",
                        caption: "Menu bar apps, helpers and services",
-                       help: "Programs running without a Dock icon: menu bar utilities, updaters, sync tools and developer tools.")
+                       help: "Programs running without a Dock icon: menu bar utilities, updaters, sync tools and developer tools.",
+                       rolls: true)
             DetailStat(label: "Processes", term: "PIDs",
                        value: "\(processCount)",
                        caption: "Apps often run several at once",
