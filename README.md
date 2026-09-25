@@ -59,7 +59,7 @@ something is missing.
 |---|---|---|
 | Full Disk Access | Trash, Mail/Messages, iPhone backups, app containers in Storage & Clean Up | Settings list + floating drag helper; detected by probing a protected file |
 | Location | Wi-Fi network name on the Network page (macOS treats it as location) | System prompt; never requests a location |
-| App Management | Uninstaller moving apps to the Trash | Settings list + helper; read from the TCC database once Full Disk Access is on, otherwise learned from the last uninstall |
+| App Management | Uninstaller moving apps to the Trash | Settings list + helper with a Done button. macOS offers no way to check it (its record stays locked even with Full Disk Access), so status comes from the last real uninstall, and a blocked uninstall offers the fix |
 | Automation › Finder | Removing items installed for all users (Finder asks for the admin password) | System prompt via `AEDeterminePermissionToAutomateTarget` |
 
 Blocked removals are classified by what fixes them (`RemovalBlocker`: EPERM on an app → App Management,

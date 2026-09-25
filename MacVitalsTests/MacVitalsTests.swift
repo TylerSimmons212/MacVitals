@@ -1719,29 +1719,6 @@ struct PermissionTests {
         #expect(records.first?.failed(.admin).isEmpty == true)
     }
 
-    @Test func privacyDatabaseLookupIsSafeWhenUnreadable() {
-        #expect(TCCDatabase.lookup(service: "kTCCServiceSystemPolicyAppBundles", client: "x", paths: ["/nonexistent/TCC.db"]) == .unreadable)
-    }
-
-    @Test func privacyDatabaseReadsDecisions() throws {
-        // A throwaway database with TCC's shape.
-        let url = FileManager.default.temporaryDirectory.appending(path: "tcc-\(UUID().uuidString).db")
-        defer { try? FileManager.default.removeItem(at: url) }
-        let setup = Process()
-        setup.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
-        setup.arguments = [url.path, """
-            CREATE TABLE access (service TEXT, client TEXT, auth_value INTEGER);
-            INSERT INTO access VALUES ('kTCCServiceSystemPolicyAppBundles', 'com.tylersimmons.MacVitals', 2);
-            INSERT INTO access VALUES ('kTCCServiceAppleEvents', 'com.tylersimmons.MacVitals', 0);
-            """]
-        try setup.run()
-        setup.waitUntilExit()
-        let lookup = { TCCDatabase.lookup(service: $0, client: "com.tylersimmons.MacVitals", paths: [url.path]) }
-        #expect(lookup("kTCCServiceSystemPolicyAppBundles") == .allowed)
-        #expect(lookup("kTCCServiceAppleEvents") == .denied)
-        #expect(lookup("kTCCServiceSystemPolicyAllFiles") == .noEntry)
-    }
-
     @Test func everyPermissionIsExplained() {
         for kind in PermissionKind.allCases {
             #expect(!kind.benefit.isEmpty && !kind.explanation.isEmpty && !kind.unlocks.isEmpty && !kind.privacyNote.isEmpty)

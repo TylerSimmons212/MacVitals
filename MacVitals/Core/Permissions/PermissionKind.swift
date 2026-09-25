@@ -94,15 +94,6 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         return URL(string: "x-apple.systempreferences:com.apple.preference.security?\(anchor)")!
     }
 
-    /// TCC service name, for reading the real state once Full Disk Access is on.
-    var tccService: String {
-        switch self {
-        case .fullDiskAccess: "kTCCServiceSystemPolicyAllFiles"
-        case .location: "kTCCServiceLocation"
-        case .appManagement: "kTCCServiceSystemPolicyAppBundles"
-        case .finder: "kTCCServiceAppleEvents"
-        }
-    }
 }
 
 enum PermissionStatus: Equatable, Sendable {

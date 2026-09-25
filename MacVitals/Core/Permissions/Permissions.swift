@@ -93,19 +93,14 @@ final class Permissions {
         return false
     }
 
-    /// Real answer from the privacy database when readable (needs Full Disk Access); otherwise
-    /// what we learned the last time an uninstall ran.
+    /// macOS offers no way to check App Management (its record is locked even with Full Disk
+    /// Access), and probing by touching another app shows a "prevented from modifying apps"
+    /// alert. So we go by what the last real uninstall told us.
     nonisolated static func appManagementStatus() -> PermissionStatus {
-        switch TCCDatabase.lookup(service: PermissionKind.appManagement.tccService) {
-        case .allowed: return .granted
-        case .denied: return .denied
-        case .noEntry: return .notDetermined
-        case .unreadable:
-            switch UserDefaults.standard.object(forKey: learnedAppManagementKey) as? Bool {
-            case true?: return .granted
-            case false?: return .denied
-            case nil: return .unknown
-            }
+        switch UserDefaults.standard.object(forKey: learnedAppManagementKey) as? Bool {
+        case true?: return .granted
+        case false?: return .denied
+        case nil: return .unknown
         }
     }
 
@@ -188,7 +183,12 @@ final class Permissions {
     private func sendToSettings(_ kind: PermissionKind, showHelper: Bool) {
         openSettings(for: kind)
         if showHelper { self.showHelper(for: kind) }
-        startPolling(kind)
+        if kind == .appManagement {
+            pollTask?.cancel()
+            waitingFor = kind // cleared by Done / Not now; nothing we can poll
+        } else {
+            startPolling(kind)
+        }
     }
 
     private func locationChanged() {
@@ -236,8 +236,8 @@ final class Permissions {
         }
     }
 
-    /// For App Management without Full Disk Access we can't see the switch, so the helper
-    /// offers "Done" and the next uninstall confirms it for real.
+    /// App Management can't be detected, so the helper offers "Done" and the next uninstall
+    /// confirms it for real.
     private func confirmManually(_ kind: PermissionKind) {
         if kind == .appManagement { UserDefaults.standard.set(true, forKey: Self.learnedAppManagementKey) }
         granted(kind)
@@ -256,8 +256,8 @@ final class Permissions {
         closeHelper()
         helperState.kind = kind
         helperState.granted = false
-        // App Management is only visible to us once Full Disk Access is on.
-        helperState.detectsAutomatically = kind == .fullDiskAccess || hasFullDiskAccess
+        // Only Full Disk Access can be detected; App Management gets a "Done" button.
+        helperState.detectsAutomatically = kind == .fullDiskAccess
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 380, height: 150),
             styleMask: [.nonactivatingPanel, .titled, .fullSizeContentView, .closable],

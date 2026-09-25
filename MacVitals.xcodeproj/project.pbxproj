@@ -10,7 +10,6 @@
 		001E6A4FE83B4218EA081E02 /* StartupItemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F46D9F8B0198C22AEBB6F352 /* StartupItemsView.swift */; };
 		035460C71F21E5FF03D1EDDC /* GuidePopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5359D9624DB8ACE98CFA5D07 /* GuidePopover.swift */; };
 		07256EEB58162D4C166F5A69 /* CPUSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774528E71FB79096704BCF37 /* CPUSampler.swift */; };
-		1368457509C8A967C4685785 /* TCCDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 037DEB9114551A7FD95BDDC7 /* TCCDatabase.swift */; };
 		1595D358862FF82936D00169 /* CleanupModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43F52052FFF6547AFE1A08C2 /* CleanupModels.swift */; };
 		160F311C5B762A012185425A /* SectionGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8186F332485B00C351F1314 /* SectionGuide.swift */; };
 		1639C854E9812567CBF3B502 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F2826C4E8B85750D31CBFF /* Theme.swift */; };
@@ -95,7 +94,6 @@
 /* Begin PBXFileReference section */
 		01EE11581B067D3C79FF1758 /* MenuBarViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarViews.swift; sourceTree = "<group>"; };
 		02CF83170FD9742CECF04184 /* MacVitals.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacVitals.entitlements; sourceTree = "<group>"; };
-		037DEB9114551A7FD95BDDC7 /* TCCDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TCCDatabase.swift; sourceTree = "<group>"; };
 		042446A5B48593E7FB41964D /* Health.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Health.swift; sourceTree = "<group>"; };
 		0DF9F032D8F3A60407B7BE21 /* StorageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageModel.swift; sourceTree = "<group>"; };
 		11EB67226C04C7D6AC30D77F /* MemorySampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemorySampler.swift; sourceTree = "<group>"; };
@@ -235,7 +233,6 @@
 			children = (
 				6A0B565A083763AE9FE4B6CF /* PermissionKind.swift */,
 				A9CD4A767EE38D03AA21DFA1 /* Permissions.swift */,
-				037DEB9114551A7FD95BDDC7 /* TCCDatabase.swift */,
 			);
 			path = Permissions;
 			sourceTree = "<group>";
@@ -548,7 +545,6 @@
 				7A62A2337D53CA7A824FAD79 /* StorageScanner.swift in Sources */,
 				88EC4533310CA96A5C865755 /* SystemInfo.swift in Sources */,
 				70EED1BF018D931F519662A6 /* SystemMonitor.swift in Sources */,
-				1368457509C8A967C4685785 /* TCCDatabase.swift in Sources */,
 				1639C854E9812567CBF3B502 /* Theme.swift in Sources */,
 				7690D8E214589907E7A6A027 /* TileVisuals.swift in Sources */,
 				CAD9D66161B508BE60922C20 /* UninstallerModel.swift in Sources */,
