@@ -105,6 +105,7 @@ final class NetworkModel {
 /// how fast is it; what's using it; how much data have I used. Under the hood: link details.
 struct NetworkView: View {
     @Environment(SystemMonitor.self) private var monitor
+    @Environment(Permissions.self) private var permissions
     @AppStorage(SettingsKeys.historyRange) private var rangeRaw = HistoryRange.hour.rawValue
     @State private var model = NetworkModel()
 
@@ -167,7 +168,7 @@ struct NetworkView: View {
                 HStack(spacing: 8) {
                     if let wifi = model.wifi {
                         let signal = NetworkInsights.signal(rssi: wifi.rssi)
-                        InfoChip(text: "Wi-Fi · \(signal.title) signal", icon: "wifi", tint: signal == .weak ? .orange : .secondary)
+                        InfoChip(text: "\(wifi.ssid ?? "Wi-Fi") · \(signal.title) signal", icon: "wifi", tint: signal == .weak ? .orange : .secondary)
                     } else if model.config.isOnline {
                         InfoChip(text: "Wired connection", icon: "cable.connector")
                     }
@@ -356,6 +357,7 @@ struct NetworkView: View {
         let config = model.config
         var rows: [(String, String)] = []
         if let wifi {
+            if let ssid = wifi.ssid { rows.append(("Network", ssid)) }
             rows.append(("Standard", wifi.standard))
             if let band = wifi.bandName { rows.append(("Band", band + (wifi.widthName.map { " · \($0) wide" } ?? ""))) }
             if let channel = wifi.channel { rows.append(("Channel", "\(channel)")) }
@@ -382,9 +384,23 @@ struct NetworkView: View {
                     .font(.callout)
                 }
             }
-            Text("The Wi-Fi network name needs Location access in macOS, so Mac Vitals doesn't show it.")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+            if let wifi, wifi.ssid == nil {
+                HStack(spacing: 10) {
+                    Image(systemName: "location.slash").foregroundStyle(.secondary)
+                    Text("macOS hides your Wi-Fi network's name unless Location is allowed. Mac Vitals never looks up where you are.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Button(permissions.status(.location) == .denied ? "Open Settings" : "Show Network Name") {
+                        permissions.request(.location)
+                    }
+                    .buttonStyle(.glass)
+                    .controlSize(.small)
+                    .pointerStyle(.link)
+                }
+                .padding(.top, 4)
+            }
         }
     }
 }

@@ -1658,3 +1658,95 @@ struct RollingTextTests {
         #expect(RollingTextView.width(of: "1", font: font) == RollingTextView.width(of: "8", font: font))
     }
 }
+
+@Suite("Permissions")
+struct PermissionTests {
+    private func posix(_ code: Int32) -> Error {
+        NSError(domain: NSCocoaErrorDomain, code: NSFileWriteNoPermissionError,
+                userInfo: [NSUnderlyingErrorKey: NSError(domain: NSPOSIXErrorDomain, code: Int(code))])
+    }
+
+    @Test func blockedRemovalsAreClassifiedByWhatFixesThem() {
+        // macOS privacy (EPERM) on an app bundle → App Management.
+        #expect(CleanupRemover.blocker(for: posix(EPERM), path: "/Applications/Foo.app", hasFullDiskAccess: true) == .appManagement)
+        // EPERM elsewhere → Full Disk Access, unless it's already on.
+        #expect(CleanupRemover.blocker(for: posix(EPERM), path: "/Users/me/Library/Mail/V10", hasFullDiskAccess: false) == .fullDiskAccess)
+        #expect(CleanupRemover.blocker(for: posix(EPERM), path: "/Users/me/Library/Mail/V10", hasFullDiskAccess: true) == .other)
+        // Ordinary ownership (EACCES) → installed for all users → Finder with a password.
+        #expect(CleanupRemover.blocker(for: posix(EACCES), path: "/Applications/zoom.us.app", hasFullDiskAccess: true) == .admin)
+        #expect(CleanupRemover.blocker(for: posix(EACCES), path: "/Library/LaunchDaemons/x.plist", hasFullDiskAccess: true) == .admin)
+        #expect(CleanupRemover.blocker(for: posix(EBUSY), path: "/tmp/x", hasFullDiskAccess: true) == .other)
+    }
+
+    @Test func findsPosixCodeDeepInTheErrorChain() {
+        let nested = NSError(domain: NSCocoaErrorDomain, code: 1, userInfo: [
+            NSUnderlyingErrorKey: NSError(domain: "Other", code: 2, userInfo: [
+                NSUnderlyingErrorKey: NSError(domain: NSPOSIXErrorDomain, code: Int(EACCES)),
+            ]),
+        ])
+        #expect(CleanupRemover.posixCode(of: nested) == EACCES)
+        #expect(CleanupRemover.posixCode(of: NSError(domain: "x", code: 1)) == nil)
+    }
+
+    @Test func finderResultsPairWithRequestedItems() {
+        let items = [
+            FailedItem(name: "Zoom", path: "/Applications/zoom.us.app", size: 100, blocker: .admin),
+            FailedItem(name: "Helper", path: "/Library/LaunchDaemons/a.plist", size: 1, blocker: .admin),
+        ]
+        // In order, one answer per item.
+        let ordered = FinderRemover.match(items, trashedPaths: ["/Users/me/.Trash/zoom.us.app", "/Users/me/.Trash/a.plist"],
+                                          cancelled: false, exists: { _ in false })
+        #expect(ordered.entries.map(\.trashedPath) == ["/Users/me/.Trash/zoom.us.app", "/Users/me/.Trash/a.plist"])
+        #expect(ordered.remaining.isEmpty)
+        // Cancelled password prompt: nothing moved, everything still to do.
+        let cancelled = FinderRemover.match(items, trashedPaths: [], cancelled: true, exists: { _ in true })
+        #expect(cancelled.cancelled && cancelled.entries.isEmpty && cancelled.remaining.count == 2)
+        // Partial: only the helper went; match by name.
+        let partial = FinderRemover.match(items, trashedPaths: ["/Users/me/.Trash/a.plist"], cancelled: false,
+                                          exists: { $0.hasSuffix(".app") })
+        #expect(partial.entries.map(\.name) == ["Helper"])
+        #expect(partial.entries.first?.trashedPath == "/Users/me/.Trash/a.plist")
+        #expect(partial.remaining.map(\.name) == ["Zoom"])
+    }
+
+    @Test func olderHistoryWithoutFailureReasonsStillLoads() throws {
+        let json = """
+        [{"id":"6F1C2A8E-1B7C-4B7A-9C55-1E2D3C4B5A69","date":0,"entries":[],"failures":["Old thing"]}]
+        """
+        let records = try JSONDecoder().decode([CleanupRecord].self, from: Data(json.utf8))
+        #expect(records.first?.failures == ["Old thing"])
+        #expect(records.first?.failedItems == nil)
+        #expect(records.first?.failed(.admin).isEmpty == true)
+    }
+
+    @Test func privacyDatabaseLookupIsSafeWhenUnreadable() {
+        #expect(TCCDatabase.lookup(service: "kTCCServiceSystemPolicyAppBundles", client: "x", paths: ["/nonexistent/TCC.db"]) == .unreadable)
+    }
+
+    @Test func privacyDatabaseReadsDecisions() throws {
+        // A throwaway database with TCC's shape.
+        let url = FileManager.default.temporaryDirectory.appending(path: "tcc-\(UUID().uuidString).db")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let setup = Process()
+        setup.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
+        setup.arguments = [url.path, """
+            CREATE TABLE access (service TEXT, client TEXT, auth_value INTEGER);
+            INSERT INTO access VALUES ('kTCCServiceSystemPolicyAppBundles', 'com.tylersimmons.MacVitals', 2);
+            INSERT INTO access VALUES ('kTCCServiceAppleEvents', 'com.tylersimmons.MacVitals', 0);
+            """]
+        try setup.run()
+        setup.waitUntilExit()
+        let lookup = { TCCDatabase.lookup(service: $0, client: "com.tylersimmons.MacVitals", paths: [url.path]) }
+        #expect(lookup("kTCCServiceSystemPolicyAppBundles") == .allowed)
+        #expect(lookup("kTCCServiceAppleEvents") == .denied)
+        #expect(lookup("kTCCServiceSystemPolicyAllFiles") == .noEntry)
+    }
+
+    @Test func everyPermissionIsExplained() {
+        for kind in PermissionKind.allCases {
+            #expect(!kind.benefit.isEmpty && !kind.explanation.isEmpty && !kind.unlocks.isEmpty && !kind.privacyNote.isEmpty)
+            #expect(kind.settingsURL.absoluteString.hasPrefix("x-apple.systempreferences:com.apple.preference.security?Privacy_"))
+        }
+        #expect(PermissionKind.allCases.filter(\.isRecommended) == [.fullDiskAccess])
+    }
+}

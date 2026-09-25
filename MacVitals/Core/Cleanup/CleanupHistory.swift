@@ -13,7 +13,13 @@ struct CleanupRecord: Codable, Identifiable, Sendable {
     let id: UUID
     let date: Date
     var entries: [Entry]
-    let failures: [String]
+    var failures: [String]
+    /// What stopped each failure, so the result can offer the right fix. Optional for older history.
+    var failedItems: [FailedItem]? = nil
+
+    func failed(_ blocker: RemovalBlocker) -> [FailedItem] {
+        (failedItems ?? []).filter { $0.blocker == blocker }
+    }
 
     var movedToTrash: Int64 { entries.filter { $0.trashedPath != nil }.reduce(0) { $0 + $1.size } }
     var deletedPermanently: Int64 { entries.filter { $0.trashedPath == nil }.reduce(0) { $0 + $1.size } }
@@ -26,6 +32,27 @@ struct CleanupRecord: Codable, Identifiable, Sendable {
             return FileManager.default.fileExists(atPath: trashed) && !FileManager.default.fileExists(atPath: entry.originalPath)
         }
     }
+}
+
+/// Why an item couldn't be removed, in terms of what would fix it.
+enum RemovalBlocker: String, Codable, Sendable {
+    /// macOS asks before one app deletes another (Privacy & Security › App Management).
+    case appManagement
+    /// A privacy-protected location (Mail, containers…) and Full Disk Access is off.
+    case fullDiskAccess
+    /// Owned by the system / installed for all users: needs an admin password (via Finder).
+    case admin
+    /// In use, protected by macOS, or gone.
+    case other
+}
+
+struct FailedItem: Codable, Sendable, Hashable {
+    let name: String
+    let path: String
+    let size: Int64
+    let blocker: RemovalBlocker
+
+    var junkItem: JunkItem { JunkItem(path: path, name: name, detail: nil, size: size, tier: .review) }
 }
 
 /// The only code in Clean Up that removes anything. Every module goes through it, so the
@@ -45,9 +72,12 @@ enum CleanupRemover {
         let fm = FileManager.default
         var entries: [CleanupRecord.Entry] = []
         var failures: [String] = []
+        var failedItems: [FailedItem] = []
+        let hasFullDiskAccess = Permissions.checkFullDiskAccess()
         for item in items {
             guard !isProtected(item.path) else {
                 failures.append(item.name)
+                failedItems.append(FailedItem(name: item.name, path: item.path, size: item.size, blocker: .other))
                 continue
             }
             do {
@@ -59,11 +89,62 @@ enum CleanupRemover {
                     try fm.trashItem(at: item.url, resultingItemURL: &resulting)
                     entries.append(.init(name: item.name, originalPath: item.path, trashedPath: resulting?.path, size: item.size))
                 }
+                if isInstalledApp(item.path) { Permissions.learnAppManagement(allowed: true) }
             } catch {
+                let blocker = blocker(for: error, path: item.path, hasFullDiskAccess: hasFullDiskAccess)
+                if blocker == .appManagement, isInstalledApp(item.path) { Permissions.learnAppManagement(allowed: false) }
                 failures.append(item.name)
+                failedItems.append(FailedItem(name: item.name, path: item.path, size: item.size, blocker: blocker))
             }
         }
-        return CleanupRecord(id: UUID(), date: Date(), entries: entries, failures: failures)
+        return CleanupRecord(id: UUID(), date: Date(), entries: entries, failures: failures, failedItems: failedItems)
+    }
+
+    static func isAppBundle(_ path: String) -> Bool {
+        path.lowercased().hasSuffix(".app")
+    }
+
+    /// An app in an Applications folder: the only removals that tell us about App Management.
+    static func isInstalledApp(_ path: String) -> Bool {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        return isAppBundle(path) && (path.hasPrefix("/Applications/") || path.hasPrefix(home + "/Applications/"))
+    }
+
+    /// EPERM ("Operation not permitted") is macOS privacy protection; EACCES ("Permission
+    /// denied") is ordinary file ownership, e.g. something installed for all users.
+    static func blocker(for error: Error, path: String, hasFullDiskAccess: Bool) -> RemovalBlocker {
+        switch posixCode(of: error) {
+        case EPERM:
+            if isAppBundle(path) { return .appManagement }
+            return hasFullDiskAccess ? .other : .fullDiskAccess
+        case EACCES:
+            return .admin
+        case nil:
+            // No POSIX detail: fall back to Cocoa's "no permission" and check ownership ourselves.
+            if (error as NSError).domain == NSCocoaErrorDomain, (error as NSError).code == NSFileWriteNoPermissionError {
+                return isAppBundle(path) && isWritableByUs(path) ? .appManagement : .admin
+            }
+            return .other
+        default:
+            return .other // in use, busy, gone…
+        }
+    }
+
+    /// Walks the underlying-error chain for the POSIX code.
+    static func posixCode(of error: Error) -> Int32? {
+        var queue: [NSError] = [error as NSError]
+        while !queue.isEmpty {
+            let current = queue.removeFirst()
+            if current.domain == NSPOSIXErrorDomain { return Int32(current.code) }
+            queue.append(contentsOf: current.underlyingErrors as [NSError])
+        }
+        return nil
+    }
+
+    /// Ordinary Unix permissions would allow it (so a refusal is macOS privacy, not ownership).
+    static func isWritableByUs(_ path: String) -> Bool {
+        let parent = (path as NSString).deletingLastPathComponent
+        return FileManager.default.isWritableFile(atPath: parent) && FileManager.default.isWritableFile(atPath: path)
     }
 
     /// Moves everything still in the Trash back to where it was. Returns how many came back.

@@ -99,6 +99,50 @@ final class CleanupEngine {
         await scan()
     }
 
+    /// Bumped when a blocked removal is fixed and retried, so pages can refresh their lists.
+    private(set) var resolvedCount = 0
+
+    /// Retries the items one kind of blocker stopped, once the fix is in place: after App
+    /// Management / Full Disk Access is allowed, or through Finder (with your password) for
+    /// items installed for all users. The result merges into the same record, so one banner,
+    /// one Put Back.
+    func resolve(_ record: CleanupRecord, _ blocker: RemovalBlocker) async {
+        let items = record.failed(blocker)
+        guard !items.isEmpty else { return }
+        var updated = record
+        let remaining: [FailedItem]
+        if blocker == .admin {
+            let result = await Task.detached(priority: .userInitiated) { FinderRemover.trash(items) }.value
+            updated.entries += result.entries
+            remaining = result.remaining
+        } else {
+            let retry = await Task.detached(priority: .userInitiated) {
+                CleanupRemover.remove(items.map(\.junkItem), permanently: false)
+            }.value
+            updated.entries += retry.entries
+            remaining = retry.failedItems ?? []
+        }
+        let resolvedPaths = Set(items.map(\.path)).subtracting(remaining.map(\.path))
+        updated.failedItems = (record.failedItems ?? []).filter { !resolvedPaths.contains($0.path) }
+            .map { failed in remaining.first { $0.path == failed.path } ?? failed }
+        updated.failures = updated.failedItems?.map(\.name) ?? []
+        upsert(updated)
+        if lastRecord?.id == record.id || lastRecord == nil { lastRecord = updated }
+        resolvedCount &+= 1
+    }
+
+    /// For items we already know are installed for all users: straight to Finder (one password
+    /// prompt), recorded like any other cleanup.
+    func removeWithFinder(_ items: [JunkItem]) async {
+        let failed = items.map { FailedItem(name: $0.name, path: $0.path, size: $0.size, blocker: .admin) }
+        let result = await Task.detached(priority: .userInitiated) { FinderRemover.trash(failed) }.value
+        if result.cancelled && result.entries.isEmpty { return }
+        let record = CleanupRecord(id: UUID(), date: Date(), entries: result.entries,
+                                   failures: result.remaining.map(\.name), failedItems: result.remaining)
+        self.record(record)
+        resolvedCount &+= 1
+    }
+
     func dismissResult() {
         lastRecord = nil
     }
@@ -114,6 +158,14 @@ final class CleanupEngine {
         guard !record.entries.isEmpty else { return }
         history.insert(record, at: 0)
         CleanupHistoryStore.save(history)
+    }
+
+    private func upsert(_ record: CleanupRecord) {
+        if history.contains(where: { $0.id == record.id }) {
+            replace(record)
+        } else {
+            remember(record)
+        }
     }
 
     private func replace(_ record: CleanupRecord) {

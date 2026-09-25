@@ -56,6 +56,7 @@ struct MacVitalsApp: App {
         Settings {
             SettingsView()
                 .showsDockIconWhileOpen("settings")
+                .environment(Permissions.shared)
         }
     }
 }

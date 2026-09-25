@@ -7,6 +7,7 @@ struct DashboardView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
     @AppStorage(SettingsKeys.ambientMotion) private var ambientMotion = true
+    @AppStorage(SettingsKeys.hasSeenWelcome) private var hasSeenWelcome = false
 
     var body: some View {
         let motion = MotionPolicy.resolve(reduceMotion: reduceMotion, userEnabled: ambientMotion, active: appearsActive)
@@ -36,6 +37,10 @@ struct DashboardView: View {
         }
         .environment(\.motionEnabled, motion.enabled)
         .tracksVisibility(as: "dashboard", monitor: monitor)
+        .sheet(isPresented: Binding(get: { !hasSeenWelcome }, set: { if !$0 { hasSeenWelcome = true } })) {
+            WelcomeView { hasSeenWelcome = true }
+                .environment(Permissions.shared)
+        }
     }
 
 

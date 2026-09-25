@@ -60,6 +60,7 @@ struct UninstallerView: View {
         .searchable(text: $search, placement: .toolbar, prompt: "Search apps")
         .task { if model.phase == .idle { await model.scan() } }
         .onChange(of: engine.putBackCount) { Task { await model.scan() } }
+        .onChange(of: engine.resolvedCount) { model.pruneRemoved() }
         .animation(.spring(response: 0.5, dampingFraction: 0.82), value: engine.lastRecord?.id)
         .sheet(item: $pendingUninstall) { app in
             UninstallSheet(app: app, isRunning: model.isRunning(app)) { items in
