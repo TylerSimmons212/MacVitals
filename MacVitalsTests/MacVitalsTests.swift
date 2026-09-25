@@ -1727,3 +1727,33 @@ struct PermissionTests {
         #expect(PermissionKind.allCases.filter(\.isRecommended) == [.fullDiskAccess])
     }
 }
+
+@Suite("Scan orb")
+@MainActor
+struct ScanOrbTests {
+    private func animationCount(_ view: ScanSweepView) -> Int {
+        (view.layer?.sublayers ?? []).reduce(0) { $0 + ($1.animationKeys()?.count ?? 0) }
+    }
+
+    @Test func sweepRunsOnlyWhileScanning() {
+        let view = ScanSweepView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        view.update(scanning: false, animated: true, color: .systemMint)
+        view.layout()
+        #expect(animationCount(view) == 0)
+
+        view.update(scanning: true, animated: true, color: .systemMint)
+        #expect(animationCount(view) == 4) // one sweep + three ripples, all in the render server
+        view.update(scanning: true, animated: true, color: .systemMint) // no-op, no restart
+        #expect(animationCount(view) == 4)
+
+        view.update(scanning: false, animated: true, color: .systemMint)
+        #expect(animationCount(view) == 0)
+    }
+
+    @Test func respectsReducedMotion() {
+        let view = ScanSweepView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        view.update(scanning: true, animated: false, color: .systemMint)
+        view.layout()
+        #expect(animationCount(view) == 0)
+    }
+}

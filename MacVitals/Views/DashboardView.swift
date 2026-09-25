@@ -73,12 +73,6 @@ struct DashboardView: View {
                 }
             }
         }
-        .safeAreaInset(edge: .bottom) {
-            SidebarHealthFooter(score: monitor.health.score, grade: monitor.health.grade) {
-                router.section = .overview
-            }
-            .padding(12)
-        }
     }
 
     private func cleanupBadge(for section: DashboardSection) -> Text? {
@@ -113,33 +107,5 @@ struct DashboardView: View {
         case .uninstaller: UninstallerView()
         case .startup: StartupItemsView()
         }
-    }
-}
-
-private struct SidebarHealthFooter: View {
-    let score: Int
-    let grade: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                HealthRing(score: score, lineWidth: 4, showsLabel: false)
-                    .frame(width: 26, height: 26)
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Health \(score)")
-                        .font(.callout.weight(.semibold))
-                        .monospacedDigit()
-                        .rollingNumber(score)
-                    Text(grade).font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(10)
-            .contentShape(Rectangle())
-            .glassEffect(.regular.tint(Theme.health(score).opacity(0.15)).interactive(), in: .rect(cornerRadius: 14))
-        }
-        .buttonStyle(.plain)
-        .pointerStyle(.link)
     }
 }

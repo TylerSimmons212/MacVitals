@@ -8,35 +8,146 @@ struct ScanOrb: View {
     let animated: Bool
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: !(scanning && animated))) { context in
-            let t = context.date.timeIntervalSinceReferenceDate
-            ZStack {
-                if scanning {
-                    ForEach(0..<3) { i in
-                        let phase = (t * 0.6 + Double(i) / 3).truncatingRemainder(dividingBy: 1)
-                        Circle()
-                            .stroke(Theme.cleanup.opacity(0.5 * (1 - phase)), lineWidth: 1.5)
-                            .scaleEffect(0.55 + phase * 0.55)
-                    }
-                }
-                Circle()
-                    .fill(AngularGradient(colors: [Theme.cleanup.opacity(0), Theme.cleanup.opacity(scanning ? 0.55 : 0.15)], center: .center))
-                    .rotationEffect(.degrees(scanning ? t * 220 : 0))
-                    .mask(Circle().padding(10))
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(Theme.cleanup.gradient, style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .padding(4)
-                    .animation(.spring(response: 0.6), value: progress)
-                Image(systemName: "sparkles")
-                    .font(.system(size: 38, weight: .medium))
-                    .foregroundStyle(Theme.cleanup.gradient)
-                    .symbolEffect(.variableColor.iterative.reversing, isActive: scanning && animated)
-                    .symbolEffect(.bounce, value: scanning)
-            }
+        ZStack {
+            // Radar sweep + ripples run in Core Animation: smooth at the display's frame rate,
+            // and no per-frame work in our process (the old TimelineView redrew 30×/s).
+            ScanSweep(scanning: scanning, animated: animated, color: NSColor(Theme.cleanup))
+                .padding(10)
+            LayerRing(fraction: progress, color: Theme.cleanup, lineWidth: 5)
+                .padding(4)
+            Image(systemName: "sparkles")
+                .font(.system(size: 38, weight: .medium))
+                .foregroundStyle(Theme.cleanup.gradient)
+                .symbolEffect(.variableColor.iterative.reversing, isActive: scanning && animated)
+                .symbolEffect(.bounce, value: scanning)
         }
         .glassEffect(.regular.tint(Theme.cleanup.opacity(0.15)), in: .circle)
+    }
+}
+
+/// A slow radar sweep (one turn every 2.4 s) with ripples expanding outward while scanning.
+/// At rest: a faint, still sweep. Reduce Motion / ambient motion off: still, no ripples.
+private struct ScanSweep: NSViewRepresentable {
+    let scanning: Bool
+    let animated: Bool
+    let color: NSColor
+
+    func makeNSView(context: Context) -> ScanSweepView { ScanSweepView() }
+
+    func updateNSView(_ view: ScanSweepView, context: Context) {
+        view.update(scanning: scanning, animated: animated, color: color)
+    }
+}
+
+final class ScanSweepView: NSView {
+    private let sweep = CAGradientLayer()
+    private let sweepMask = CAShapeLayer()
+    private var ripples: [CAShapeLayer] = []
+    private var scanning = false
+    private var animated = false
+    private var color = NSColor.systemMint
+
+    static let turnDuration: CFTimeInterval = 2.4
+    static let rippleDuration: CFTimeInterval = 2.4
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        layer?.masksToBounds = false
+        for _ in 0..<3 {
+            let ripple = CAShapeLayer()
+            ripple.fillColor = nil
+            ripple.lineWidth = 1.5
+            ripple.opacity = 0
+            layer?.addSublayer(ripple)
+            ripples.append(ripple)
+        }
+        sweep.type = .conic
+        sweep.startPoint = CGPoint(x: 0.5, y: 0.5)
+        sweep.endPoint = CGPoint(x: 0.5, y: 1)
+        sweep.mask = sweepMask
+        layer?.addSublayer(sweep)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    func update(scanning: Bool, animated: Bool, color: NSColor) {
+        let changed = scanning != self.scanning || animated != self.animated || color != self.color
+        self.scanning = scanning
+        self.animated = animated
+        self.color = color
+        if changed { apply() }
+    }
+
+    override func layout() {
+        super.layout()
+        apply()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        apply()
+    }
+
+    private func apply() {
+        let bounds = self.bounds
+        guard bounds.width > 0 else { return }
+        let side = min(bounds.width, bounds.height)
+        let square = CGRect(x: bounds.midX - side / 2, y: bounds.midY - side / 2, width: side, height: side)
+        var colors: [CGColor] = []
+        var stroke = color.cgColor
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            colors = [self.color.withAlphaComponent(0).cgColor, self.color.withAlphaComponent(self.scanning ? 0.55 : 0.15).cgColor]
+            stroke = self.color.withAlphaComponent(0.5).cgColor
+        }
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        sweep.bounds = CGRect(origin: .zero, size: square.size)
+        sweep.position = CGPoint(x: square.midX, y: square.midY)
+        sweep.colors = colors
+        sweepMask.frame = sweep.bounds
+        sweepMask.path = CGPath(ellipseIn: sweep.bounds, transform: nil)
+        // Ripples start at the orb's inner ring and fade out just past its edge.
+        for ripple in ripples {
+            ripple.bounds = CGRect(origin: .zero, size: square.size)
+            ripple.position = CGPoint(x: square.midX, y: square.midY)
+            ripple.path = CGPath(ellipseIn: ripple.bounds, transform: nil)
+            ripple.strokeColor = stroke
+        }
+        CATransaction.commit()
+
+        let moving = scanning && animated
+        if moving, sweep.animation(forKey: "turn") == nil {
+            let turn = CABasicAnimation(keyPath: "transform.rotation.z")
+            turn.fromValue = 0
+            turn.toValue = -2 * Double.pi // clockwise
+            turn.duration = Self.turnDuration
+            turn.repeatCount = .infinity
+            sweep.add(turn, forKey: "turn")
+
+            let now = CACurrentMediaTime()
+            for (index, ripple) in ripples.enumerated() {
+                let scale = CABasicAnimation(keyPath: "transform.scale")
+                scale.fromValue = 0.6
+                scale.toValue = 1.25
+                let fade = CABasicAnimation(keyPath: "opacity")
+                fade.fromValue = 0.9
+                fade.toValue = 0
+                let group = CAAnimationGroup()
+                group.animations = [scale, fade]
+                group.duration = Self.rippleDuration
+                group.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                group.repeatCount = .infinity
+                group.beginTime = now + Self.rippleDuration * Double(index) / Double(ripples.count)
+                group.fillMode = .backwards
+                ripple.add(group, forKey: "ripple")
+            }
+        } else if !moving {
+            sweep.removeAnimation(forKey: "turn")
+            ripples.forEach { $0.removeAnimation(forKey: "ripple") }
+        }
     }
 }
 
