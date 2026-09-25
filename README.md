@@ -65,6 +65,11 @@ something is missing.
 Blocked removals are classified by what fixes them (`RemovalBlocker`: EPERM on an app → App Management,
 EPERM elsewhere → Full Disk Access, EACCES → admin via Finder), and the result banner offers that one fix.
 
+**Startup items never prompt on their own.** macOS's complete list (`sfltool dumpbtm`) now needs an
+admin password, and running it directly shows a system prompt titled "sfltool" that looks like malware.
+The default scan uses launchd folders plus active helpers inside installed apps; "Show Complete List…"
+reads the full list once per session through Mac Vitals' own prompt (`BTMAccess`).
+
 **Signing matters:** macOS remembers these permissions by code signature. Builds are signed with a stable
 Developer ID (`project.yml`); ad-hoc signing made every rebuild look like a new app and silently dropped
 them. Release omits `get-task-allow` so it can be notarized.

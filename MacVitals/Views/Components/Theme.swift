@@ -9,6 +9,7 @@ enum Theme {
     static let upload = Color.pink
     static let battery = Color.green
     static let cleanup = Color.mint
+    static let protection = Color.indigo
 
     static func health(_ score: Int) -> Color {
         switch score {

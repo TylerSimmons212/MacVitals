@@ -150,3 +150,39 @@ struct PermissionList: View {
         }
     }
 }
+
+/// Offered where the startup list matters: macOS keeps its complete list behind an admin
+/// password, so Mac Vitals asks only when you choose to, with its own prompt.
+struct CompleteStartupListCallout: View {
+    let isWorking: Bool
+    let action: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "list.bullet.rectangle.portrait")
+                .font(.title3)
+                .foregroundStyle(Theme.protection)
+                .frame(width: 26)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Some login items are only visible with your password")
+                    .font(.callout.weight(.semibold))
+                Text("macOS keeps its complete list private. Mac Vitals can read it once for this session. It only reads the list; nothing is changed.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            if isWorking {
+                ProgressView().controlSize(.small)
+            } else {
+                Button("Show Complete List…", action: action)
+                    .buttonStyle(.glass)
+                    .controlSize(.small)
+                    .pointerStyle(.link)
+                    .help("macOS will ask for your password on behalf of Mac Vitals")
+            }
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.protection.opacity(0.08)))
+    }
+}

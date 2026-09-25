@@ -30,6 +30,7 @@ struct SectionGuide: Sendable {
         case .junk: junk
         case .uninstaller: uninstaller
         case .startup: startup
+        case .protection: protection
         }
     }
 
@@ -329,6 +330,38 @@ struct SectionGuide: Sendable {
             Term(term: "System service (Daemon)", meaning: "Runs for every user with extra privileges. Changing it needs an admin password."),
             Term(term: "Broken", meaning: "Its program no longer exists, usually because the app was deleted."),
             Term(term: "Allow in the Background", meaning: "The macOS switch in System Settings › Login Items that permits a helper to run."),
+        ]
+    )
+
+    static let protection = SectionGuide(
+        title: "Understanding Protection",
+        summary: "Whether the security built into macOS is switched on, and whether anything starting automatically looks out of place. Mac Vitals checks and explains; it isn't antivirus.",
+        healthy: [
+            "FileVault, Gatekeeper and System Integrity Protection are on. They're on by default on a new Mac.",
+            "Security fixes and malware definitions install automatically, so XProtect stays current.",
+            "Startup items come from Apple, verified developers, or a package manager like Homebrew.",
+            "The firewall being off is macOS's default. Turn it on if you use public Wi-Fi.",
+        ],
+        culprits: [
+            "Adware installed alongside free downloads, usually as a startup item with no verified developer.",
+            "Scripts hidden in dot-folders or temporary folders that run at login.",
+            "Configuration profiles that lock your browser's home page or search engine.",
+            "Security settings switched off to install something, then never switched back on.",
+        ],
+        fixes: [
+            "Use each row's button to open the exact setting in System Settings.",
+            "Remove startup items you don't recognize in Startup Items, and their apps with the Uninstaller.",
+            "Remove configuration profiles you didn't add in System Settings › General › Device Management.",
+            "For a deeper scan, use a dedicated anti-malware app.",
+        ],
+        glossary: [
+            Term(term: "XProtect", meaning: "The malware scanner built into macOS. Apple updates what it looks for every few weeks."),
+            Term(term: "Gatekeeper", meaning: "Checks apps the first time they open and blocks ones that aren't from identified developers."),
+            Term(term: "SIP (System Integrity Protection)", meaning: "Stops anything, even with your password, from modifying macOS itself."),
+            Term(term: "FileVault", meaning: "Full-disk encryption. Without your password, your data is unreadable."),
+            Term(term: "Verified developer", meaning: "Signed with a Developer ID or through the Mac App Store, so Apple knows who made it."),
+            Term(term: "Ad hoc signature", meaning: "Signed on the machine that built it, not by a known developer. Normal for open-source tools."),
+            Term(term: "Launch agent / daemon", meaning: "A program macOS starts automatically, for you (agent) or for every user (daemon)."),
         ]
     )
 

@@ -10,6 +10,7 @@ struct MacVitalsApp: App {
     @State private var uninstaller = UninstallerModel()
     @State private var startup = StartupModel()
     @State private var storage = StorageModel()
+    @State private var protection = ProtectionModel()
     /// Read once at launch. (Reading it via @AppStorage in `body` isn't honored for launch behavior.)
     private let dashboardLaunchBehavior: SceneLaunchBehavior
 
@@ -33,6 +34,7 @@ struct MacVitalsApp: App {
                 .environment(uninstaller)
                 .environment(startup)
                 .environment(storage)
+                .environment(protection)
                 .environment(Permissions.shared)
                 .environment(AppActivity.shared)
                 .frame(minWidth: 1000, minHeight: 680)

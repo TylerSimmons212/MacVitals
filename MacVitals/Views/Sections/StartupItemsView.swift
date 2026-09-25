@@ -13,6 +13,12 @@ struct StartupItemsView: View {
         SectionScroll {
             hero.entrance()
             stats.entrance(delay: 0.04)
+            if model.phase == .ready && !model.isComplete {
+                CompleteStartupListCallout(isWorking: model.isUnlocking) {
+                    Task { await model.loadCompleteList() }
+                }
+                .entrance(delay: 0.05)
+            }
             if let record = engine.lastRecord {
                 CleanupResultBanner(record: record)
                     .transition(.move(edge: .top).combined(with: .opacity))
