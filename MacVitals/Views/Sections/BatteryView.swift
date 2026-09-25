@@ -46,12 +46,7 @@ struct BatteryView: View {
 
         return HStack(spacing: 22) {
             ZStack {
-                Circle().stroke(chargeTint.opacity(0.15), lineWidth: 12)
-                Circle()
-                    .trim(from: 0, to: min(1, battery.percent / 100))
-                    .stroke(chargeTint.gradient, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.smooth(duration: 0.6), value: battery.percent)
+                GaugeRing(fraction: min(1, battery.percent / 100), color: chargeTint, lineWidth: 12)
                 VStack(spacing: 0) {
                     HStack(alignment: .firstTextBaseline, spacing: 1) {
                         Text(String(format: "%.0f", battery.percent))
@@ -297,19 +292,20 @@ struct BatteryView: View {
                 Spacer()
                 Text(value).font(.callout).monospacedDigit()
             }
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(.quaternary)
-                    Capsule().fill(tint.gradient).frame(width: proxy.size.width * min(1, max(0, fraction)))
-                    if let marker {
+            ZStack {
+                Capsule().fill(.quaternary)
+                LayerBar(fraction: fraction, color: tint)
+            }
+            .frame(height: 10)
+            .overlay {
+                if let marker {
+                    GeometryReader { proxy in
                         Rectangle().fill(.primary.opacity(0.35)).frame(width: 1.5, height: proxy.size.height + 6)
-                            .offset(x: proxy.size.width * marker)
+                            .offset(x: proxy.size.width * marker, y: -3)
                             .help("80%: Apple's service threshold")
                     }
                 }
             }
-            .frame(height: 10)
-            .animation(.smooth(duration: 0.8), value: fraction)
             Text(caption).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }

@@ -83,12 +83,12 @@ struct DashboardView: View {
 
     private func badge(for section: DashboardSection) -> Text? {
         switch section {
-        case .overview: Text("\(monitor.health.score)")
-        case .cpu: Text(Fmt.percent(monitor.cpu.total))
-        case .memory: Text(Fmt.percent(monitor.memory.usedPercent))
-        case .disk: Text(Fmt.percent(monitor.disk.freePercent) + " free")
-        case .battery: monitor.battery.map { Text(Fmt.percent($0.percent)) }
-        default: nil
+        case .overview: return Text("\(monitor.health.score)")
+        case .cpu: return Text(Fmt.percent(monitor.cpu.total))
+        case .memory: return Text(Fmt.percent(monitor.memory.usedPercent))
+        case .disk: return Text(Fmt.percent(monitor.disk.freePercent) + " free")
+        case .battery: return monitor.battery.map { Text(Fmt.percent($0.percent)) }
+        default: return nil
         }
     }
 

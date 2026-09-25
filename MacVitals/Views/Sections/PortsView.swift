@@ -83,12 +83,7 @@ struct PortsView: View {
 
         return HStack(spacing: 22) {
             ZStack {
-                Circle().stroke(tint.opacity(0.15), lineWidth: 12)
-                Circle()
-                    .trim(from: 0, to: count == 0 ? 0 : Double(count - idle) / Double(count))
-                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.smooth(duration: 0.6), value: idle)
+                GaugeRing(fraction: count == 0 ? 0 : Double(count - idle) / Double(count), color: tint, lineWidth: 12)
                 VStack(spacing: 0) {
                     Text("\(count)")
                         .font(.system(size: 30, weight: .bold, design: .rounded))

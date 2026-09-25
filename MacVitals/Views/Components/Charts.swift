@@ -34,7 +34,7 @@ struct HistoryChart: View {
 
     var body: some View {
         let now = Date()
-        Chart {
+        return Chart {
             if stacked {
                 ForEach(bands) { band in
                     AreaMark(
@@ -155,16 +155,7 @@ struct HealthRing: View {
     var body: some View {
         let color = Theme.health(score)
         ZStack {
-            Circle()
-                .stroke(color.opacity(0.15), lineWidth: lineWidth)
-            Circle()
-                .trim(from: 0, to: CGFloat(score) / 100)
-                .stroke(
-                    AngularGradient(colors: [color.opacity(0.7), color], center: .center),
-                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-                .animation(.smooth, value: score)
+            GaugeRing(fraction: Double(score) / 100, color: color, lineWidth: lineWidth)
             if showsLabel {
                 VStack(spacing: 0) {
                     Text("\(score)")
@@ -194,18 +185,16 @@ struct SegmentedBar: View {
 
     var body: some View {
         let total = max(segments.reduce(0) { $0 + $1.value }, 1)
-        GeometryReader { proxy in
-            HStack(spacing: 2) {
-                ForEach(segments) { segment in
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(segment.color.gradient)
-                        .frame(width: max(0, proxy.size.width * segment.value / total - 2))
-                }
-            }
+        var cumulative = 0.0
+        let ranges: [(Segment, Double, Double)] = segments.map { segment in
+            let start = cumulative / total
+            cumulative += segment.value
+            return (segment, start, cumulative / total)
         }
-        .frame(height: height)
-        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-        .animation(.smooth, value: segments.map(\.value))
+        // Core Animation segments: they glide without per-frame work in our process.
+        LayerSegments(segments: ranges.map { .init(id: $0.0.id, start: $0.1, end: $0.2, color: $0.0.color) })
+            .frame(height: height)
+            .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
     }
 }
 
@@ -216,15 +205,11 @@ struct MeterBar: View {
     var height: CGFloat = 6
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .leading) {
-                Capsule().fill(.quaternary)
-                Capsule()
-                    .fill(tint.gradient)
-                    .frame(width: proxy.size.width * min(1, max(0, fraction)))
-            }
+        // Track in SwiftUI (static), fill in Core Animation (glides without per-frame work in-app).
+        ZStack {
+            Capsule().fill(.quaternary)
+            LayerBar(fraction: fraction, color: tint)
         }
         .frame(height: height)
-        .animation(.smooth, value: fraction)
     }
 }

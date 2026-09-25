@@ -41,16 +41,12 @@ struct CPUView: View {
         return HStack(spacing: 22) {
             ZStack {
                 Circle().stroke(tint.opacity(0.15), lineWidth: 12)
-                Circle()
-                    .trim(from: 0, to: min(1, cpu.total / 100))
-                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.smooth(duration: 0.6), value: cpu.total)
+                LayerRing(fraction: cpu.total / 100, color: tint, lineWidth: 12)
                 VStack(spacing: 0) {
                     Text(Fmt.percent(cpu.total))
                         .font(.system(size: 30, weight: .bold, design: .rounded))
                         .monospacedDigit()
-                        .rollingNumber(Int(cpu.total))
+
                     Text("in use").font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -255,16 +251,11 @@ struct CoreGrid: View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 30, maximum: 44), spacing: 8)], spacing: 10) {
             ForEach(Array(values.enumerated()), id: \.offset) { index, value in
                 VStack(spacing: 4) {
-                    GeometryReader { proxy in
-                        ZStack(alignment: .bottom) {
-                            RoundedRectangle(cornerRadius: 4).fill(.quaternary)
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Theme.load(value).gradient)
-                                .frame(height: max(2, proxy.size.height * min(1, value / 100)))
-                        }
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 4).fill(.quaternary)
+                        LayerBar(fraction: max(0.03, value / 100), color: Theme.load(value), axis: .vertical, cornerRadius: 4)
                     }
                     .frame(height: 56)
-                    .animation(.smooth, value: value)
                     Text("\(firstIndex + index + 1)")
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.secondary)

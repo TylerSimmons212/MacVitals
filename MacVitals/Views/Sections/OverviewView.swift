@@ -173,7 +173,9 @@ struct HealthCard: View {
                 }
             }
             .frame(maxHeight: .infinity)
-            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: report.checks)
+            // Animate only when a check's status changes, not when its live value text does (the CPU
+            // check's "23% avg" changes every refresh and kept this list animating nonstop).
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: report.checks.map { "\($0.id)|\($0.severity.map { String($0.rawValue) } ?? "ok")" })
         }
         .cardStyle(padding: 18, tint: tint, fillHeight: true)
     }

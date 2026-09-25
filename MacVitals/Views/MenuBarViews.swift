@@ -343,16 +343,10 @@ private struct MiniGauge: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 ZStack {
-                    Circle().stroke(tint.opacity(0.18), lineWidth: 4.5)
-                    Circle()
-                        .trim(from: 0, to: min(1, max(0, fraction)))
-                        .stroke(tint.gradient, style: StrokeStyle(lineWidth: 4.5, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .animation(.smooth(duration: 0.6), value: fraction)
+                    GaugeRing(fraction: fraction, color: tint, lineWidth: 4.5)
                     Text(text)
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .monospacedDigit()
-                        .rollingNumber(text)
                 }
                 .frame(width: 46, height: 46)
                 Text(label)
