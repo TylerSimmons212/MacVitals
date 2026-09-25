@@ -29,6 +29,7 @@ struct SectionGuide: Sendable {
         case .cleanup: cleanup
         case .junk: junk
         case .uninstaller: uninstaller
+        case .startup: startup
         }
     }
 
@@ -302,6 +303,32 @@ struct SectionGuide: Sendable {
             Term(term: "Data", meaning: "What an app keeps in your Library: caches, settings, saved windows, sandbox data."),
             Term(term: "Last opened", meaning: "From Spotlight. \"No record\" can mean never opened, or Spotlight didn't track it."),
             Term(term: "Leftovers", meaning: "Data from apps that aren't installed anymore. Found by matching bundle IDs exactly."),
+        ]
+    )
+
+    static let startup = SectionGuide(
+        title: "Understanding Startup Items",
+        summary: "Things that start automatically when you log in or run in the background: apps' menu bar helpers, updaters, sync tools and system services.",
+        healthy: [
+            "A handful is normal. Most are updaters and menu bar helpers.",
+            "\"Running\" doesn't mean it's using much. Check the Apps page for what's actually busy.",
+        ],
+        culprits: [
+            "Updaters for apps you rarely use, running all the time.",
+            "Broken items left behind by deleted apps.",
+            "Helpers you forgot you installed.",
+        ],
+        fixes: [
+            "Remove broken items. Their apps are already gone.",
+            "Switch off background helpers you don't need. It's reversible anytime.",
+            "Items macOS controls (Open at Login, embedded helpers, system services) open System Settings › Login Items.",
+        ],
+        glossary: [
+            Term(term: "Opens at login (Login item)", meaning: "An app or menu bar helper that launches when you log in."),
+            Term(term: "Background helper (Agent)", meaning: "A small program that runs in the background for you: updaters, sync, menu bar extras."),
+            Term(term: "System service (Daemon)", meaning: "Runs for every user with extra privileges. Changing it needs an admin password."),
+            Term(term: "Broken", meaning: "Its program no longer exists, usually because the app was deleted."),
+            Term(term: "Allow in the Background", meaning: "The macOS switch in System Settings › Login Items that permits a helper to run."),
         ]
     )
 

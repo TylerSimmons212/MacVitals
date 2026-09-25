@@ -1443,3 +1443,159 @@ struct UninstallerTests {
         #expect(items.allSatisfy { fm.fileExists(atPath: $0.path) })
     }
 }
+
+@Suite("Startup items")
+struct StartupItemsTests {
+    /// Real `sfltool dumpbtm` output shape, trimmed.
+    private let sample = """
+    ========================
+     Records for UID -2 : FFFFEEEE-DDDD-CCCC-BBBB-AAAAFFFFFFFE
+    ========================
+
+     Items:
+
+     #2:
+                     UUID: 8D6D22CC-24BD-470E-9CB9-613E982FD62D
+                     Name: com.macpaw.CleanMyMac5.Agent
+           Developer Name: MacPaw Inc.
+          Team Identifier: S8EX82NJP6
+                     Type: legacy daemon (0x10010)
+              Disposition: [enabled, allowed, notified] (0xb)
+               Identifier: 16.com.macpaw.CleanMyMac5.Agent
+                      URL: /Library/LaunchDaemons/com.macpaw.CleanMyMac5.Agent.plist
+          Executable Path: /Library/PrivilegedHelperTools/com.macpaw.CleanMyMac5.Agent
+                 Last Use: 2026-09-25 11:05:55-07:00
+        Parent Identifier: MacPaw Inc.
+
+    ========================
+     Records for UID 501 : 8ED67105-027E-4B86-88F6-CBD9BD7CFB64
+    ========================
+
+     Items:
+
+     #1:
+                     Name: CleanMyMac
+           Developer Name: MacPaw Inc.
+                     Type: app (0x2)
+              Disposition: [enabled, allowed, notified] (0xb)
+               Identifier: 2.com.macpaw.CleanMyMac5
+                      URL: /Applications/CleanMyMac.app
+      Embedded Item Identifiers:
+        #1: 4.com.macpaw.CleanMyMac5.Menu
+
+     #2:
+                     Name: ollama
+           Developer Name: (null)
+                     Type: legacy agent (0x10008)
+              Disposition: [enabled, allowed, notified] (0xb)
+               Identifier: 8.homebrew.mxcl.ollama
+                      URL: /Users/501/Library/LaunchAgents/homebrew.mxcl.ollama.plist
+          Executable Path: /opt/homebrew/opt/ollama/bin/ollama
+                 Last Use: 2026-09-25 11:05:55-07:00
+        Parent Identifier: Unknown Developer
+
+     #3:
+                     Name: CleanMyMac Menu
+           Developer Name: MacPaw Inc.
+                     Type: login item (0x4)
+              Disposition: [disabled, allowed, notified] (0xa)
+               Identifier: 4.com.macpaw.CleanMyMac5.Menu
+                      URL: Contents/Library/LoginItems/CleanMyMac_5_Menu.app
+        Bundle Identifier: com.macpaw.CleanMyMac5.Menu
+        Parent Identifier: 2.com.macpaw.CleanMyMac5
+
+     #4:
+                     Name: GoogleUpdater
+           Developer Name: Google LLC
+                     Type: legacy agent (0x10008)
+              Disposition: [enabled, allowed, not notified] (0x3)
+               Identifier: 8.com.google.GoogleUpdater.wake
+                      URL: /Users/501/Library/LaunchAgents/com.google.GoogleUpdater.wake.plist
+          Executable Path: /Users/501/Library/Application Support/Google/GoogleUpdater/Current/GoogleUpdater.app/Contents/MacOS/GoogleUpdater
+
+     #5:
+                     Name: QuickLookShareExtension (Global).appex
+                     Type: quicklook (0x800)
+               Identifier: 2048.com.canva.affinity.quicklook
+    """
+
+    @Test func parsesRecordsTypesAndDispositions() {
+        let records = BTMParser.parse(sample)
+        #expect(records.count == 6)
+        let daemon = records[0]
+        #expect(daemon.uid == -2 && daemon.kind == .daemon && daemon.label == "com.macpaw.CleanMyMac5.Agent")
+        #expect(daemon.isEnabled && daemon.lastUse != nil)
+        #expect(records[3].kind == .loginItem && !records[3].isEnabled)
+        #expect(records[5].kind == nil)   // Quick Look extensions don't run at startup
+        #expect(records[2].developer == nil)  // "(null)" becomes nil
+    }
+
+    @Test func buildsFriendlyItems() {
+        let items = StartupInventory.items(from: [.parsed(BTMParser.parse(sample))], uid: 501, home: "/Users/tyler",
+                                           running: ["homebrew.mxcl.ollama"], disabledLabels: [])
+        let byLabel = Dictionary(uniqueKeysWithValues: items.map { ($0.label, $0) })
+        #expect(items.count == 4)   // daemon, ollama, login item, updater (extension excluded)
+
+        let ollama = try! #require(byLabel["homebrew.mxcl.ollama"])
+        #expect(ollama.plistPath == "/Users/tyler/Library/LaunchAgents/homebrew.mxcl.ollama.plist") // /Users/501 → real home
+        #expect(ollama.isRunning && ollama.isUserManageable == false) // not *this* test runner's home
+        #expect(ollama.purpose.hasPrefix("Homebrew service: ollama"))
+
+        let menu = try! #require(byLabel["com.macpaw.CleanMyMac5.Menu"])
+        #expect(menu.appName == "CleanMyMac" && menu.appPath == "/Applications/CleanMyMac.app")
+        #expect(menu.kind == .loginItem && !menu.isEnabled && menu.schedule == .atLogin)
+
+        let updater = try! #require(byLabel["com.google.GoogleUpdater.wake"])
+        #expect(updater.isBroken)   // its program doesn't exist at /Users/tyler/... in the test
+        #expect(updater.purpose.hasPrefix("Its app is gone"))  // broken wins over "updater"
+
+        // With a program that exists, it's explained as an updater.
+        let working = StartupItem(label: "com.google.GoogleUpdater.wake", name: "GoogleUpdater", kind: .agent,
+                                  developer: "Google LLC", appName: "Google Chrome", appPath: nil, plistPath: nil,
+                                  executablePath: "/bin/ls", isEnabled: true, lastRun: nil)
+        #expect(working.purpose == "Keeps Google Chrome up to date. Usually safe to turn off; most apps also check for updates when you open them.")
+    }
+
+    @Test func schedulesFromPlist() {
+        #expect(StartupInventory.schedule(of: ["KeepAlive": true]) == .alwaysRunning)
+        #expect(StartupInventory.schedule(of: ["KeepAlive": ["SuccessfulExit": false]]) == .alwaysRunning)
+        #expect(StartupInventory.schedule(of: ["StartInterval": 3600]) == .every(3600))
+        #expect(StartupInventory.schedule(of: ["StartCalendarInterval": ["Hour": 3]]) == .calendar)
+        #expect(StartupInventory.schedule(of: ["RunAtLoad": true]) == .atLogin)
+        #expect(StartupInventory.schedule(of: ["MachServices": ["x": true]]) == .onDemand)
+        #expect(StartupItem.Schedule.every(3600).text == "Runs every 60 minutes")
+        #expect(StartupItem.Schedule.every(14_400).text == "Runs every 4 hours")
+    }
+
+    @Test func parsesLaunchctlOutput() {
+        let list = "PID\tStatus\tLabel\n412\t0\thomebrew.mxcl.ollama\n-\t0\tcom.google.GoogleUpdater.wake\n"
+        #expect(StartupInventory.parseLaunchctlList(list) == ["homebrew.mxcl.ollama"])
+        let disabled = """
+        \tdisabled services = {
+        \t\t"com.adobe.GC.AGM" => enabled
+        \t\t"com.macvitals.test" => disabled
+        \t\t"com.old.style" => true
+        \t}
+        """
+        #expect(StartupInventory.parseDisabled(disabled) == ["com.macvitals.test", "com.old.style"])
+    }
+
+    @Test func genericHelperNamesUseTheirApp() {
+        #expect(StartupInventory.friendlyName("LaunchAgent", appName: "Logi Options+") == "Logi Options+ helper")
+        #expect(StartupInventory.friendlyName("Launcher.app", appName: "ColorSlurp") == "ColorSlurp helper")
+        #expect(StartupInventory.friendlyName("CleanMyMac Menu", appName: "CleanMyMac") == "CleanMyMac Menu")
+        #expect(StartupInventory.friendlyName("com.microsoft.teams2.agent", appName: "Microsoft Teams") == "Microsoft Teams helper")
+    }
+
+    @Test func homePathTranslation() {
+        #expect(StartupInventory.resolveHome("/Users/501/Library/LaunchAgents/x.plist", uid: 501, home: "/Users/tyler")
+                == "/Users/tyler/Library/LaunchAgents/x.plist")
+        #expect(StartupInventory.resolveHome("/Library/LaunchDaemons/x.plist", uid: 501, home: "/Users/tyler")
+                == "/Library/LaunchDaemons/x.plist")
+    }
+
+    @Test func readsTheLiveDatabaseOnThisMac() {
+        #expect(!BTMParser.read().isEmpty)
+        #expect(!StartupInventory.scan().isEmpty)
+    }
+}
