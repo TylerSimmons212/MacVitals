@@ -18,6 +18,8 @@ final class CleanupEngine {
     /// The cleanup that just finished, for the result banner.
     private(set) var lastRecord: CleanupRecord?
     var selection: Set<String> = []
+    /// Bumped whenever something is put back, so other screens (Uninstaller) can refresh.
+    private(set) var putBackCount = 0
 
     // MARK: Derived
 
@@ -92,12 +94,20 @@ final class CleanupEngine {
     func putBack(_ record: CleanupRecord) async {
         _ = await Task.detached(priority: .userInitiated) { CleanupRemover.putBack(record) }.value
         if lastRecord?.id == record.id { lastRecord = nil }
+        putBackCount &+= 1
         history = history.map { $0 } // restorable state is computed from disk; nudge observers
         await scan()
     }
 
     func dismissResult() {
         lastRecord = nil
+    }
+
+    /// For removals done outside the Junk flow (e.g. uninstalling an app), so they get the same
+    /// history, Put Back and Empty Now.
+    func record(_ record: CleanupRecord) {
+        remember(record)
+        lastRecord = record
     }
 
     private func remember(_ record: CleanupRecord) {

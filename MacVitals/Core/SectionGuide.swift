@@ -28,6 +28,7 @@ struct SectionGuide: Sendable {
         case .ports: ports
         case .cleanup: cleanup
         case .junk: junk
+        case .uninstaller: uninstaller
         }
     }
 
@@ -278,6 +279,29 @@ struct SectionGuide: Sendable {
             Term(term: "Review", meaning: "Probably not needed, but worth a quick look. Not pre-selected."),
             Term(term: "Careful", meaning: "Can't be undone (like emptying the Trash). Never pre-selected."),
             Term(term: "Put back", meaning: "Moves cleaned items from the Trash back to where they were."),
+        ]
+    )
+
+    static let uninstaller = SectionGuide(
+        title: "Understanding the Uninstaller",
+        summary: "Dragging an app to the Trash leaves its data behind: caches, settings, saved windows, sometimes gigabytes. The Uninstaller removes the app and everything it kept in your Library, and shows you exactly what before it does.",
+        healthy: [
+            "Apps you haven't opened in months are the easiest wins.",
+            "An app's data can be bigger than the app itself (chat apps, browsers, editors).",
+        ],
+        culprits: [
+            "Apps installed for one task and never opened again.",
+            "Leftovers from apps you deleted by dragging to the Trash.",
+        ],
+        fixes: [
+            "Filter to \"Not used in 6 months\" and sort by size.",
+            "Untick anything in the uninstall list you want to keep, such as settings, in case you reinstall.",
+            "Changed your mind? Put Back in Smart Clean › Recent cleanups restores the app and its data.",
+        ],
+        glossary: [
+            Term(term: "Data", meaning: "What an app keeps in your Library: caches, settings, saved windows, sandbox data."),
+            Term(term: "Last opened", meaning: "From Spotlight. \"No record\" can mean never opened, or Spotlight didn't track it."),
+            Term(term: "Leftovers", meaning: "Data from apps that aren't installed anymore. Found by matching bundle IDs exactly."),
         ]
     )
 

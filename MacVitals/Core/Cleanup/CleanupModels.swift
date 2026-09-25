@@ -31,7 +31,7 @@ enum SafetyTier: Int, Codable, Comparable, CaseIterable, Sendable {
 
 /// The areas Clean Up covers. Each is scanned by its own independent module.
 enum CleanupModuleKind: String, CaseIterable, Codable, Identifiable, Sendable {
-    case systemJunk, developerJunk, downloads, trash
+    case systemJunk, developerJunk, appLeftovers, downloads, trash
 
     var id: String { rawValue }
 
@@ -39,6 +39,7 @@ enum CleanupModuleKind: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .systemJunk: "System Junk"
         case .developerJunk: "Developer Junk"
+        case .appLeftovers: "Leftovers from Deleted Apps"
         case .downloads: "Downloads & Installers"
         case .trash: "Trash"
         }
@@ -48,6 +49,7 @@ enum CleanupModuleKind: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .systemJunk: "Caches and logs apps rebuild on their own."
         case .developerJunk: "Build data, simulators, package caches and old project dependencies."
+        case .appLeftovers: "Settings and data from apps you've already deleted."
         case .downloads: "Installers you've already used and big files you've forgotten."
         case .trash: "Files already in the Trash, waiting to be deleted."
         }
@@ -57,6 +59,7 @@ enum CleanupModuleKind: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .systemJunk: "archivebox"
         case .developerJunk: "hammer"
+        case .appLeftovers: "app.dashed"
         case .downloads: "arrow.down.circle"
         case .trash: "trash"
         }

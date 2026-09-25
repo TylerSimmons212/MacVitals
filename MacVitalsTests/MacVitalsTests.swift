@@ -1284,3 +1284,162 @@ struct CleanUpTests {
         #expect(loaded.count == 1 && loaded[0].id == record.id && loaded[0].deletedPermanently == 42)
     }
 }
+
+@Suite("Uninstaller")
+struct UninstallerTests {
+    private let fm = FileManager.default
+
+    private func put(_ home: URL, _ path: String, size: Int = 1_000_000) throws {
+        let url = home.appending(path: path)
+        try fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(count: size).write(to: url)
+    }
+
+    private func makeHome() -> URL {
+        fm.temporaryDirectory.appending(path: "mv-uninstall-\(UUID().uuidString)")
+    }
+
+    @Test func findsAnAppsLeftoversByExactMatchOnly() throws {
+        let home = makeHome()
+        defer { try? fm.removeItem(at: home) }
+        try put(home, "Library/Application Support/com.acme.notes/db.sqlite")
+        try put(home, "Library/Application Support/Acme Notes/cache.bin")
+        try put(home, "Library/Caches/com.acme.notes/blob")
+        try put(home, "Library/Preferences/com.acme.notes.plist", size: 1_000)
+        try put(home, "Library/Preferences/ByHost/com.acme.notes.ABC-123.plist", size: 1_000)
+        try put(home, "Library/LaunchAgents/com.acme.notes.helper.plist", size: 1_000)
+        try put(home, "Library/Saved Application State/com.acme.notes.savedState/data", size: 1_000)
+        // Look-alikes that must NOT match.
+        try put(home, "Library/Application Support/Acme Notes Pro/x")
+        try put(home, "Library/Caches/com.acme.notesplus/x")
+        try put(home, "Library/Preferences/com.acme.notes2.plist", size: 1_000)
+
+        let items = AppInventory.leftovers(bundleID: "com.acme.notes", names: ["Acme Notes"], home: home)
+        let paths = Set(items.map { $0.path.replacingOccurrences(of: home.path + "/", with: "") })
+        #expect(paths == [
+            "Library/Application Support/com.acme.notes",
+            "Library/Application Support/Acme Notes",
+            "Library/Caches/com.acme.notes",
+            "Library/Preferences/com.acme.notes.plist",
+            "Library/Preferences/ByHost/com.acme.notes.ABC-123.plist",
+            "Library/LaunchAgents/com.acme.notes.helper.plist",
+            "Library/Saved Application State/com.acme.notes.savedState",
+        ])
+        // Login items get a second look; data is safe to remove with the app.
+        #expect(items.first { $0.path.hasSuffix("helper.plist") }?.tier == .review)
+    }
+
+    @Test func neverOpenedDetection() {
+        let installed = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        #expect(AppInventory.isNeverOpened(lastUsed: installed.addingTimeInterval(5), created: installed))
+        #expect(!AppInventory.isNeverOpened(lastUsed: installed.addingTimeInterval(86_400), created: installed))
+        #expect(AppInventory.isNeverOpened(lastUsed: nil, created: installed))
+    }
+
+    @Test func nameMatchesRespectExactCase() throws {
+        // The real bug: "Claude Code URL Handler" (executable "claude") matched Claude's "Claude"
+        // folder because macOS folder names ignore case.
+        let home = makeHome()
+        defer { try? fm.removeItem(at: home) }
+        try put(home, "Library/Application Support/Claude/big.db", size: 2_000_000)
+        let handler = AppInventory.leftovers(bundleID: "com.anthropic.claude-code-url-handler", names: ["claude"], home: home)
+        #expect(handler.isEmpty)
+        let desktop = AppInventory.leftovers(bundleID: "com.anthropic.claudefordesktop", names: ["Claude"], home: home)
+        #expect(desktop.count == 1)
+    }
+
+    @Test func sharedLeftoversBelongToNoOne() {
+        let shared = JunkItem(path: "/Users/x/Library/Application Support/Shared", name: "App data", size: 10, tier: .safe)
+        let own = JunkItem(path: "/Users/x/Library/Caches/com.a.one", name: "Cache", size: 5, tier: .safe)
+        func app(_ id: String, _ items: [JunkItem]) -> InstalledApp {
+            InstalledApp(path: "/Applications/\(id).app", name: id, bundleID: id, version: nil, appSize: 1, leftovers: items, lastUsed: nil, isAppStore: false)
+        }
+        let result = UninstallerModel.removingSharedLeftovers([app("com.a.one", [shared, own]), app("com.b.two", [shared])])
+        #expect(result[0].leftovers == [own])
+        #expect(result[1].leftovers.isEmpty)
+    }
+
+    @Test func orphanNotesAnInstalledSiblingAndSkipsToolCaches() throws {
+        let home = makeHome()
+        defer { try? fm.removeItem(at: home) }
+        try put(home, "Library/HTTPStorages/com.openai.chat/data", size: 2_000_000)
+        try put(home, "Library/Caches/org.swift.swiftpm/data", size: 2_000_000)
+        let groups = AppInventory.orphans(home: home, installedIDs: ["com.openai.codex"], isInstalled: { _ in false })
+        #expect(groups.map(\.id) == ["orphan-com.openai.chat"])
+        #expect(groups[0].explanation.contains("com.openai.codex"))
+    }
+
+    @Test func genericNamesAreNeverUsedForMatching() {
+        let names = AppInventory.candidateNames(displayName: "Visual Studio Code",
+                                                info: ["CFBundleName": "Code", "CFBundleExecutable": "Electron"])
+        #expect(names == ["Visual Studio Code", "Code"])
+    }
+
+    @Test func inspectsAnAppBundle() throws {
+        let home = makeHome()
+        defer { try? fm.removeItem(at: home) }
+        let app = home.appending(path: "Applications/Acme Notes.app")
+        try fm.createDirectory(at: app.appending(path: "Contents/MacOS"), withIntermediateDirectories: true)
+        let plist: [String: Any] = ["CFBundleIdentifier": "com.acme.notes", "CFBundleName": "Acme Notes",
+                                    "CFBundleShortVersionString": "2.4", "CFBundlePackageType": "APPL"]
+        try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+            .write(to: app.appending(path: "Contents/Info.plist"))
+        try Data(count: 3_000_000).write(to: app.appending(path: "Contents/MacOS/Acme Notes"))
+        try put(home, "Library/Caches/com.acme.notes/blob", size: 2_000_000)
+
+        let inspected = AppInventory.inspect(app, home: home)
+        #expect(inspected.name == "Acme Notes" && inspected.bundleID == "com.acme.notes" && inspected.version == "2.4")
+        #expect(inspected.appSize >= 3_000_000 && inspected.dataSize >= 2_000_000)
+        #expect(inspected.totalSize == inspected.appSize + inspected.dataSize)
+        #expect(!inspected.isAppStore)
+        // Spotlight reports a just-created, never-opened bundle's install date as "last used".
+        // We detect that: it's "never opened", but not "unused for 6 months" (installed just now).
+        #expect(inspected.neverOpened)
+        #expect(!inspected.isUnused())
+        #expect(AppInventory.appBundles(home: home).map(\.lastPathComponent).contains("Acme Notes.app"))
+    }
+
+    @Test func findsLeftoversOfDeletedAppsOnly() throws {
+        let home = makeHome()
+        defer { try? fm.removeItem(at: home) }
+        try put(home, "Library/Application Support/com.gone.app/data", size: 2_000_000)
+        try put(home, "Library/Caches/com.gone.app/blob")
+        try put(home, "Library/Preferences/com.gone.app.plist", size: 2_000)
+        try put(home, "Library/Containers/com.still.here/data", size: 2_000_000)      // installed
+        try put(home, "Library/Caches/com.still.here.helper/blob", size: 2_000_000)   // helper of installed app
+        try put(home, "Library/Caches/com.apple.Safari/blob", size: 2_000_000)       // Apple: never touched
+        try put(home, "Library/Caches/tiny.gone.crumb/x", size: 1_000)               // too small to bother
+        try put(home, "Library/Application Support/Slack/data", size: 2_000_000)     // not a bundle ID: can't know
+
+        let groups = AppInventory.orphans(home: home, installedIDs: ["com.still.here"], isInstalled: { _ in false })
+        #expect(groups.map(\.id) == ["orphan-com.gone.app"])
+        #expect(groups[0].title == "Gone")
+        #expect(groups[0].items.count == 3)
+        #expect(groups[0].items.allSatisfy { $0.tier == .review })
+    }
+
+    @Test func bundleIDHeuristicsAndNames() {
+        #expect(AppInventory.looksLikeBundleID("com.spotify.client"))
+        #expect(!AppInventory.looksLikeBundleID("Slack"))
+        #expect(!AppInventory.looksLikeBundleID("com.acme"))
+        #expect(!AppInventory.looksLikeBundleID("My App.backup.old"))
+        #expect(AppInventory.prettyName(for: "com.spotify.client") == "Spotify")
+        #expect(AppInventory.prettyName(for: "com.hnc.Discord") == "Discord")
+        #expect(AppInventory.prettyName(for: "org.whispersystems.signal-desktop") == "Signal Desktop")
+    }
+
+    @Test func uninstallGoesToTrashAndCanBePutBack() throws {
+        let home = makeHome()
+        defer { try? fm.removeItem(at: home) }
+        try put(home, "Applications/Throwaway.app/Contents/MacOS/Throwaway", size: 1_500_000)
+        try put(home, "Library/Caches/com.throwaway.app/blob", size: 1_500_000)
+        let items = [
+            JunkItem(path: home.appending(path: "Applications/Throwaway.app").path, name: "Throwaway.app", size: 1_500_000, tier: .review),
+            JunkItem(path: home.appending(path: "Library/Caches/com.throwaway.app").path, name: "Cache", size: 1_500_000, tier: .safe),
+        ]
+        let record = CleanupRemover.remove(items, permanently: false)
+        #expect(record.entries.count == 2 && items.allSatisfy { !fm.fileExists(atPath: $0.path) })
+        #expect(CleanupRemover.putBack(record) == 2)
+        #expect(items.allSatisfy { fm.fileExists(atPath: $0.path) })
+    }
+}

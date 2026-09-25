@@ -105,6 +105,7 @@ struct DashboardView: View {
         case .ports: PortsView()
         case .cleanup: SmartCleanView()
         case .junk: JunkView()
+        case .uninstaller: UninstallerView()
         }
     }
 }

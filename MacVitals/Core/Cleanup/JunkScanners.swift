@@ -10,6 +10,8 @@ enum JunkScanners {
         switch module {
         case .systemJunk: systemJunk(home: home)
         case .developerJunk: developerJunk(home: home, now: now)
+        case .appLeftovers: ModuleScan(module: .appLeftovers,
+                                       groups: AppInventory.orphans(home: home, installedIDs: AppInventory.installedBundleIDs(home: home)))
         case .downloads: downloads(home: home, now: now)
         case .trash: trash(home: home)
         }

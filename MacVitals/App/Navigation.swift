@@ -3,7 +3,7 @@ import SwiftUI
 enum DashboardSection: String, CaseIterable, Identifiable, Hashable, Sendable {
     case overview, cpu, memory, disk, network, battery
     case apps, ports
-    case cleanup, junk
+    case cleanup, junk, uninstaller
 
     var id: String { rawValue }
 
@@ -19,6 +19,7 @@ enum DashboardSection: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .ports: "Dev Servers"
         case .cleanup: "Smart Clean"
         case .junk: "Junk"
+        case .uninstaller: "Uninstaller"
         }
     }
 
@@ -34,13 +35,14 @@ enum DashboardSection: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .ports: "server.rack"
         case .cleanup: "sparkles"
         case .junk: "trash.circle"
+        case .uninstaller: "xmark.bin"
         }
     }
 
     static let vitals: [DashboardSection] = [.overview, .cpu, .memory, .disk, .network, .battery]
     static let tools: [DashboardSection] = [.apps, .ports]
     /// Clean Up: diagnosis lives in the Vitals pages; removing things lives here.
-    static let cleanUp: [DashboardSection] = [.cleanup, .junk]
+    static let cleanUp: [DashboardSection] = [.cleanup, .junk, .uninstaller]
 }
 
 @MainActor

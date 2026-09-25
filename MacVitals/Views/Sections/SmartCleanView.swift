@@ -133,7 +133,7 @@ struct SmartCleanView: View {
     // MARK: Modules
 
     private var modules: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 280), spacing: 16)], spacing: 16) {
             ForEach(CleanupModuleKind.allCases) { module in
                 ModuleCard(module: module, scan: engine.scans[module], scanning: engine.scanning.contains(module)) {
                     router.section = .junk
