@@ -9,8 +9,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "2"
     # One stable identity for every build. macOS remembers privacy permissions (Full Disk Access,
     # Location, Automation…) by code signature; ad-hoc signing ("-") made every rebuild a "new app"
     # and silently dropped them.
