@@ -123,6 +123,7 @@ struct DashboardView: View {
         case .duplicates: DuplicatesView()
         case .screenshots: ScreenshotsView()
         case .maintenance: MaintenanceView()
+        case .extensions: ExtensionsView()
         case .uninstaller: UninstallerView()
         case .startup: StartupItemsView()
         }

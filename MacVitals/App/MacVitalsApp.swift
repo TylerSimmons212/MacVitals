@@ -17,6 +17,7 @@ struct MacVitalsApp: App {
     @State private var screenshots = ScreenshotsModel()
     @State private var similarPhotos = SimilarPhotosModel()
     @State private var maintenance = MaintenanceModel()
+    @State private var extensions = ExtensionsModel()
     /// Read once at launch. (Reading it via @AppStorage in `body` isn't honored for launch behavior.)
     private let dashboardLaunchBehavior: SceneLaunchBehavior
 
@@ -57,6 +58,7 @@ struct MacVitalsApp: App {
                 .environment(screenshots)
                 .environment(similarPhotos)
                 .environment(maintenance)
+                .environment(extensions)
                 .environment(Permissions.shared)
                 .environment(AppActivity.shared)
                 .frame(minWidth: 1000, minHeight: 680)
