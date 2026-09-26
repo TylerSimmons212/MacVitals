@@ -2286,3 +2286,75 @@ struct DuplicateTests {
         #expect(model.potential(reports) >= 600_000)
     }
 }
+
+@Suite("Similar photos and screenshots")
+struct SimilarPhotoTests {
+    private func variant(_ base: CGImage, crop: CGFloat) -> CGImage {
+        let w = CGFloat(base.width), h = CGFloat(base.height)
+        return base.cropping(to: CGRect(x: w * crop, y: h * crop, width: w * (1 - 2 * crop), height: h * (1 - 2 * crop)))!
+    }
+
+    @Test func groupsReframedShotsButNotDifferentPhotos() throws {
+        let base = try #require(SimilarPhotos.thumbnail(path: "/Library/Desktop Pictures/Flower 1.jpg", maxPixel: 1200))
+        let other = try #require(SimilarPhotos.thumbnail(path: "/Library/Desktop Pictures/Flower 2.jpg", maxPixel: 1200))
+        let images = [base, variant(base, crop: 0.04), variant(base, crop: 0.08), other, base]
+        let prints = images.map { SimilarPhotos.analyze($0)?.print }
+        #expect(prints.allSatisfy { $0 != nil })
+        let t0 = Date(timeIntervalSince1970: 1_000_000)
+        // Burst: three shots in 20 seconds, a different flower a minute later, the same shot 3 hours later.
+        let dates = [t0, t0.addingTimeInterval(10), t0.addingTimeInterval(20), t0.addingTimeInterval(60), t0.addingTimeInterval(3 * 3600)]
+        let clusters = SimilarPhotos.cluster(dates: dates, prints: prints)
+        #expect(clusters == [[0, 1, 2]])
+    }
+
+    @Test func bestShotPrefersFavoritesThenQuality() {
+        let date = Date()
+        let sharp = SimilarPhotosModel.Photo(origin: .file("/a"), date: date, pixels: 100, quality: 0.8)
+        let blurry = SimilarPhotosModel.Photo(origin: .file("/b"), date: date, pixels: 400, quality: 0.1)
+        var favorite = SimilarPhotosModel.Photo(origin: .file("/c"), date: date, pixels: 100, quality: -0.2)
+        #expect(SimilarPhotosModel.Group(photos: [blurry, sharp]).best?.id == sharp.id)
+        favorite.isFavorite = true
+        #expect(SimilarPhotosModel.Group(photos: [blurry, sharp, favorite]).best?.id == favorite.id)
+    }
+
+    @Test func recognizesScreenshotNames() {
+        #expect(ScreenshotsModel.isScreenshotName("Screenshot 2026-09-01 at 10.12.44.png"))
+        #expect(ScreenshotsModel.isScreenshotName("Screen Shot 2019-02-03 at 1.00.00 PM.png"))
+        #expect(ScreenshotsModel.isScreenshotName("CleanShot 2026-01-01 at 09.00.00@2x.png"))
+        #expect(!ScreenshotsModel.isScreenshotName("Screen Recording 2026-08-25 at 12.51.53 AM.mov"))
+        #expect(!ScreenshotsModel.isScreenshotName("Vacation.png"))
+    }
+
+    @Test func ageFilters() {
+        let now = Date()
+        let day: TimeInterval = 86_400
+        #expect(ScreenshotsModel.Age.week.contains(now.addingTimeInterval(-3 * day), now: now))
+        #expect(!ScreenshotsModel.Age.week.contains(now.addingTimeInterval(-10 * day), now: now))
+        #expect(ScreenshotsModel.Age.olderThanMonth.contains(now.addingTimeInterval(-40 * day), now: now))
+        #expect(!ScreenshotsModel.Age.olderThanYear.contains(now.addingTimeInterval(-40 * day), now: now))
+        #expect(ScreenshotsModel.Age.olderThanYear.contains(now.addingTimeInterval(-400 * day), now: now))
+    }
+
+    @MainActor
+    @Test func reviewOneAtATime() throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "shots-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        for i in 0..<3 { try Data(count: 100).write(to: folder.appending(path: "Screenshot 2026-09-0\(i + 1) at 10.00.00.png")) }
+        let found = ScreenshotsModel.screenshotsByName(in: folder.path)
+        #expect(found.count == 3)
+
+        let model = ScreenshotsModel()
+        model.loadForTesting(found)
+        model.startReview()
+        #expect(model.reviewIndex == 0)
+        model.deleteAndNext()          // 1st: delete
+        model.keepAndNext()            // 2nd: keep
+        model.back()                   // back to 2nd
+        model.deleteAndNext()          // changed mind: delete
+        model.keepAndNext()            // 3rd: keep
+        #expect(model.isReviewFinished)
+        #expect(model.selected.count == 2)
+        #expect(!model.isSelected(model.reviewList[2]))
+    }
+}

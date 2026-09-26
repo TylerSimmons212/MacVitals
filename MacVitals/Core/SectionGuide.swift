@@ -30,6 +30,7 @@ struct SectionGuide: Sendable {
         case .junk: junk
         case .spaceLens: spaceLens
         case .duplicates: duplicates
+        case .screenshots: screenshots
         case .uninstaller: uninstaller
         case .startup: startup
         case .protection: protection
@@ -414,6 +415,29 @@ struct SectionGuide: Sendable {
             Term(term: "Byte for byte", meaning: "Compared by content (SHA-256 fingerprint), not by name or date."),
             Term(term: "Shares space (APFS clone)", meaning: "A copy that points to the same data on disk as the original until one is edited. Removing it frees nothing."),
             Term(term: "Hard link", meaning: "One file with two names. Not a duplicate, and not counted."),
+        ]
+    )
+
+    static let screenshots = SectionGuide(
+        title: "Understanding Screenshots",
+        summary: "Every screenshot in your Photos library (including ones from your iPhone) or saved as a file, so you can clear out the ones you no longer need.",
+        healthy: [
+            "Recent screenshots you're still using.",
+            "A few you keep on purpose: tickets, receipts, references.",
+        ],
+        culprits: [
+            "Screenshots taken to share once and never looked at again.",
+            "iPhone screenshots syncing through iCloud Photos and taking up space on every device.",
+        ],
+        fixes: [
+            "Filter to \"Older than a month\" and select all, then deselect the few you want.",
+            "Or press Review and go one at a time: → keep, ⌫ delete, ← back.",
+            "Library deletions go to Photos' Recently Deleted for 30 days; file deletions go to the Trash.",
+        ],
+        glossary: [
+            Term(term: "Photos Library", meaning: "Screenshots in Photos, found by the screenshot tag Photos adds."),
+            Term(term: "Files", meaning: "Screenshot files anywhere in your home folder, found by the tag macOS adds to every screenshot."),
+            Term(term: "Recently Deleted", meaning: "Photos keeps deleted items there for 30 days before removing them for good."),
         ]
     )
 

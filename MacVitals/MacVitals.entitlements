@@ -8,5 +8,8 @@
 	<!-- Hardened runtime: allowed to ask to control Finder (removing protected items). -->
 	<key>com.apple.security.automation.apple-events</key>
 	<true/>
+	<!-- Hardened runtime: allowed to ask for Photos (screenshots and similar photos). -->
+	<key>com.apple.security.personal-information.photos-library</key>
+	<true/>
 </dict>
 </plist>

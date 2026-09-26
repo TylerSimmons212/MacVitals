@@ -7,6 +7,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
     case location
     case appManagement
     case finder
+    case photos
 
     var id: String { rawValue }
 
@@ -17,6 +18,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .location: "Location Services"
         case .appManagement: "App Management"
         case .finder: "Automation › Finder"
+        case .photos: "Photos"
         }
     }
 
@@ -27,6 +29,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .location: "Show your Wi-Fi network's name"
         case .appManagement: "Uninstall apps"
         case .finder: "Remove items installed for all users"
+        case .photos: "Clean up screenshots and similar photos"
         }
     }
 
@@ -38,6 +41,8 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
             "macOS counts Wi-Fi network names as location data. Mac Vitals only shows the name on the Network page and never looks up where you are."
         case .appManagement:
             "macOS asks before one app deletes another. This lets the Uninstaller move apps to the Trash."
+        case .photos:
+            "Lets Mac Vitals find screenshots and near-identical shots in your Photos library. Photos asks you to confirm anything deleted, and it goes to Recently Deleted for 30 days."
         case .finder:
             "Some apps and helpers are installed for every user. Mac Vitals asks Finder to move them to the Trash. Finder asks for your password, and they stay in the Trash until you empty it."
         }
@@ -50,6 +55,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .location: ["Network page: which Wi-Fi you're on"]
         case .appManagement: ["Uninstaller: moving apps to the Trash"]
         case .finder: ["Uninstaller and Startup Items: protected apps and helpers"]
+        case .photos: ["Screenshots in your library", "Similar photos in your library"]
         }
     }
 
@@ -59,6 +65,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .location: "Your location is never requested or stored."
         case .appManagement: "Only apps you choose to uninstall are touched."
         case .finder: "Finder is only asked to move items you choose."
+        case .photos: "Photos are analyzed on this Mac and never leave it."
         }
     }
 
@@ -68,6 +75,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .location: "wifi"
         case .appManagement: "square.grid.3x3.fill"
         case .finder: "folder.fill.badge.person.crop"
+        case .photos: "photo.on.rectangle.angled"
         }
     }
 
@@ -79,7 +87,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
     var grantStyle: GrantStyle {
         switch self {
         case .fullDiskAccess, .appManagement: .settingsList
-        case .location, .finder: .systemPrompt
+        case .location, .finder, .photos: .systemPrompt
         }
     }
 
@@ -90,6 +98,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .location: "Privacy_LocationServices"
         case .appManagement: "Privacy_AppBundles"
         case .finder: "Privacy_Automation"
+        case .photos: "Privacy_Photos"
         }
         return URL(string: "x-apple.systempreferences:com.apple.preference.security?\(anchor)")!
     }

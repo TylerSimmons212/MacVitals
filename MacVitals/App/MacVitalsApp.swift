@@ -14,6 +14,8 @@ struct MacVitalsApp: App {
     @State private var spaceLens = SpaceLensModel()
     @State private var updates = UpdatesModel()
     @State private var duplicates = DuplicatesModel()
+    @State private var screenshots = ScreenshotsModel()
+    @State private var similarPhotos = SimilarPhotosModel()
     /// Read once at launch. (Reading it via @AppStorage in `body` isn't honored for launch behavior.)
     private let dashboardLaunchBehavior: SceneLaunchBehavior
 
@@ -41,6 +43,8 @@ struct MacVitalsApp: App {
                 .environment(spaceLens)
                 .environment(updates)
                 .environment(duplicates)
+                .environment(screenshots)
+                .environment(similarPhotos)
                 .environment(Permissions.shared)
                 .environment(AppActivity.shared)
                 .frame(minWidth: 1000, minHeight: 680)

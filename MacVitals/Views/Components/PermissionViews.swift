@@ -7,6 +7,7 @@ extension PermissionKind {
         case .location: Theme.network
         case .appManagement: .blue
         case .finder: .indigo
+        case .photos: .pink
         }
     }
 }
