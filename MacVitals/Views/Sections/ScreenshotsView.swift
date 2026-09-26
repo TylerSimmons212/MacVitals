@@ -215,6 +215,8 @@ private struct ScreenshotReview: View {
     @Environment(ScreenshotsModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var image: NSImage?
+    @State private var downloading = false
+    @State private var loadFailed = false
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -233,9 +235,20 @@ private struct ScreenshotReview: View {
                     RoundedRectangle(cornerRadius: 12).fill(Color.primary.opacity(0.05))
                     if let image {
                         Image(nsImage: image).resizable().aspectRatio(contentMode: .fit).padding(6)
-                            .transition(.opacity)
+                    } else if loadFailed {
+                        VStack(spacing: 6) {
+                            Image(systemName: "icloud.slash").font(.largeTitle).foregroundStyle(.secondary)
+                            Text("Couldn't load this one. It may be in iCloud while you're offline.").foregroundStyle(.secondary)
+                        }
                     } else {
                         ProgressView()
+                    }
+                    if downloading && image != nil {
+                        Label("Downloading from iCloud…", systemImage: "icloud.and.arrow.down")
+                            .font(.caption).foregroundStyle(.secondary)
+                            .padding(.horizontal, 10).padding(.vertical, 5)
+                            .background(Capsule().fill(.regularMaterial))
+                            .frame(maxHeight: .infinity, alignment: .bottom).padding(12)
                     }
                     if model.isSelected(item) {
                         Label("Marked for deletion", systemImage: "trash.fill")
@@ -247,8 +260,20 @@ private struct ScreenshotReview: View {
                 }
                 .frame(minHeight: 420)
                 .task(id: item.id) {
-                    image = nil
-                    image = await ThumbnailCache.shared.image(for: item.origin, maxPixel: 1600)
+                    // The grid's small version shows instantly; the full size replaces it.
+                    loadFailed = false
+                    image = ThumbnailCache.shared.cached(item.origin, maxPixel: 1600)
+                        ?? ThumbnailCache.shared.cached(item.origin, maxPixel: 360)
+                    downloading = true
+                    for await (preview, _) in ThumbnailCache.shared.preview(for: item.origin, maxPixel: 1600) {
+                        image = preview
+                    }
+                    downloading = false
+                    if image == nil { loadFailed = true }
+                    // Warm the next one so → feels instant.
+                    if model.reviewList.indices.contains(index + 1) {
+                        ThumbnailCache.shared.prefetch(model.reviewList[index + 1].origin, maxPixel: 1600)
+                    }
                 }
                 HStack(spacing: 12) {
                     Button { model.back() } label: { Label("Back", systemImage: "arrow.left") }

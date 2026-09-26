@@ -246,8 +246,55 @@ final class ScreenshotsModel {
 final class ThumbnailCache {
     static let shared = ThumbnailCache()
     private let cache = NSCache<NSString, NSImage>()
+    /// Full-size previews are big; keep only a handful (current, previous, next…).
+    private let large = NSCache<NSString, NSImage>()
 
-    init() { cache.countLimit = 600 }
+    init() {
+        cache.countLimit = 600
+        large.countLimit = 8
+    }
+
+    private static func key(_ origin: Screenshot.Origin, _ maxPixel: CGFloat) -> NSString { "\(origin)|\(Int(maxPixel))" as NSString }
+
+    /// Already loaded? (For showing the small version instantly while the big one loads.)
+    func cached(_ origin: Screenshot.Origin, maxPixel: CGFloat) -> NSImage? {
+        large.object(forKey: Self.key(origin, maxPixel)) ?? cache.object(forKey: Self.key(origin, maxPixel))
+    }
+
+    /// Big preview: yields a quick version first, then the full one (downloaded from iCloud if
+    /// needed). `final` is true for the last image.
+    func preview(for origin: Screenshot.Origin, maxPixel: CGFloat) -> AsyncStream<(image: NSImage, final: Bool)> {
+        let key = Self.key(origin, maxPixel)
+        if let done = large.object(forKey: key) {
+            return AsyncStream { $0.yield((done, true)); $0.finish() }
+        }
+        return AsyncStream { continuation in
+            let task = Task { @MainActor in
+                switch origin {
+                case .library(let id):
+                    for await (cgImage, final) in PhotoLibrary.images(for: id, maxPixel: maxPixel) {
+                        let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+                        if final { self.large.setObject(image, forKey: key) }
+                        continuation.yield((image, final))
+                    }
+                case .file(let path):
+                    if let cgImage = await Task.detached(priority: .userInitiated, operation: { SimilarPhotos.thumbnail(path: path, maxPixel: Int(maxPixel)) }).value {
+                        let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+                        self.large.setObject(image, forKey: key)
+                        continuation.yield((image, true))
+                    }
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    /// Warm the next preview so arrowing through is instant.
+    func prefetch(_ origin: Screenshot.Origin, maxPixel: CGFloat) {
+        guard large.object(forKey: Self.key(origin, maxPixel)) == nil else { return }
+        Task { for await _ in preview(for: origin, maxPixel: maxPixel) {} }
+    }
 
     func image(for origin: Screenshot.Origin, maxPixel: CGFloat) async -> NSImage? {
         let key = "\(origin)|\(Int(maxPixel))" as NSString

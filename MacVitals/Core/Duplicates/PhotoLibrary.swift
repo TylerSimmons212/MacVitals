@@ -61,19 +61,50 @@ enum PhotoLibrary {
         return assets
     }
 
-    /// A local image for display or analysis. Never downloads from iCloud (uses what's on this Mac).
-    static func image(for id: String, maxPixel: CGFloat) async -> CGImage? {
+    /// One image, in one callback. With "Optimize Mac Storage", larger sizes may exist only in
+    /// iCloud: without `allowNetwork` those come back nil (Photos error 3164).
+    static func image(for id: String, maxPixel: CGFloat, allowNetwork: Bool = false) async -> CGImage? {
         guard let asset = fetch([id]).first else { return nil }
         let options = PHImageRequestOptions()
-        options.isNetworkAccessAllowed = false
+        options.isNetworkAccessAllowed = allowNetwork
         options.deliveryMode = .highQualityFormat
         options.resizeMode = .fast
-        options.isSynchronous = false
         let target = CGSize(width: maxPixel, height: maxPixel)
         return await withCheckedContinuation { continuation in
             PHImageManager.default().requestImage(for: asset, targetSize: target, contentMode: .aspectFit, options: options) { image, _ in
                 continuation.resume(returning: image?.cgImage(forProposedRect: nil, context: nil, hints: nil))
             }
+        }
+    }
+
+    /// For analysis: the local 512 px version, else a smaller local one, and only then iCloud.
+    /// (Photos' "fast" format is under 100 px, too small to compare reliably.)
+    static func analysisImage(for id: String) async -> CGImage? {
+        if let image = await image(for: id, maxPixel: 512) { return image }
+        if let image = await image(for: id, maxPixel: 300) { return image }
+        return await image(for: id, maxPixel: 512, allowNetwork: true)
+    }
+
+    /// For big previews: whatever's on this Mac right away (a smaller version), then the
+    /// full-size one once it's downloaded from iCloud. `final` marks the last image.
+    static func images(for id: String, maxPixel: CGFloat) -> AsyncStream<(image: CGImage, final: Bool)> {
+        AsyncStream { continuation in
+            guard let asset = fetch([id]).first else { continuation.finish(); return }
+            let options = PHImageRequestOptions()
+            options.isNetworkAccessAllowed = true
+            options.deliveryMode = .opportunistic
+            options.resizeMode = .fast
+            let requestID = PHImageManager.default().requestImage(for: asset, targetSize: CGSize(width: maxPixel, height: maxPixel),
+                                                                  contentMode: .aspectFit, options: options) { image, info in
+                let degraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                if let cgImage = image?.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+                    continuation.yield((cgImage, !degraded))
+                }
+                if !degraded || info?[PHImageErrorKey] != nil || (info?[PHImageCancelledKey] as? Bool) == true {
+                    continuation.finish()
+                }
+            }
+            continuation.onTermination = { _ in PHImageManager.default().cancelImageRequest(requestID) }
         }
     }
 

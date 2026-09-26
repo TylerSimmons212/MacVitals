@@ -118,7 +118,7 @@ final class SimilarPhotosModel {
                 next += 1
                 group.addTask {
                     let image: CGImage? = switch origin {
-                    case .library(let id): await PhotoLibrary.image(for: id, maxPixel: 512)
+                    case .library(let id): await PhotoLibrary.analysisImage(for: id)
                     case .file(let path): SimilarPhotos.thumbnail(path: path, maxPixel: 512)
                     }
                     return (index, image.flatMap(SimilarPhotos.analyze))
