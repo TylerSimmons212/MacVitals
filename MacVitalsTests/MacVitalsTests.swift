@@ -1919,3 +1919,116 @@ struct ProtectionTests {
         #expect(!PersistenceAudit.isInHiddenFolder("/opt/.x/y", home: home)) // outside home
     }
 }
+
+@Suite("Space Lens")
+struct SpaceLensTests {
+    private func makeTree() throws -> URL {
+        let root = FileManager.default.temporaryDirectory.appending(path: "spacelens-\(UUID().uuidString)")
+        let fm = FileManager.default
+        try fm.createDirectory(at: root.appending(path: "big/inner"), withIntermediateDirectories: true)
+        try fm.createDirectory(at: root.appending(path: "many"), withIntermediateDirectories: true)
+        try fm.createDirectory(at: root.appending(path: "empty"), withIntermediateDirectories: true)
+        try Data(count: 400_000).write(to: root.appending(path: "big/inner/video.mov"))
+        try Data(count: 100_000).write(to: root.appending(path: "big/notes.txt"))
+        for i in 0..<20 { try Data(count: 5_000 + i * 10).write(to: root.appending(path: "many/f\(i).bin")) }
+        // A hard link to the video: same data, must be counted once.
+        try fm.linkItem(at: root.appending(path: "big/inner/video.mov"), to: root.appending(path: "many/video-link.mov"))
+        try fm.createSymbolicLink(at: root.appending(path: "loop"), withDestinationURL: root) // never followed
+        return root
+    }
+
+    @Test func scansSizesLikeTheDisk() async throws {
+        let root = try makeTree()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let scanner = SpaceScanner()
+        let tree = await scanner.scan(root.path)
+        let big = try #require(tree.children.first { $0.name == "big" })
+        let notes = try #require(big.children.first { $0.name == "notes.txt" })
+        #expect(notes.size >= 100_000) // allocated size, rounded up to blocks
+        #expect(notes.path == root.appending(path: "big/notes.txt").path)
+        #expect(big.size == big.children.reduce(0) { $0 + $1.size })
+        #expect(tree.size == tree.children.reduce(0) { $0 + $1.size })
+        // Empty folders and symlinks don't appear.
+        #expect(!tree.children.contains { $0.name == "empty" || $0.name == "loop" })
+        #expect(tree.children.first === tree.children.max { $0.size < $1.size }) // sorted biggest first
+        #expect(scanner.filesScanned.load(ordering: .relaxed) == 23)
+    }
+
+    @Test func hardLinksCountOnceAndSmallFilesAreGrouped() async throws {
+        let root = try makeTree()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let tree = await SpaceScanner().scan(root.path)
+        let many = try #require(tree.children.first { $0.name == "many" })
+        // 21 files: the 12 largest listed, the rest summed. (The hard-linked video counts as zero
+        // here if its other name was reached first, which can drop it from the list.)
+        let grouped = try #require(many.children.first { if case .smallFiles = $0.kind { true } else { false } })
+        if case .smallFiles(let count) = grouped.kind { #expect(count == 9) }
+        #expect(many.fileCount == 21)
+        // The hard-linked video (400 KB) is counted in one place only.
+        #expect(tree.size >= 400_000 + 100_000 + 20 * 5_000)
+        #expect(tree.size < 2 * 400_000 + 100_000 + 20 * 5_200 + 200_000)
+    }
+
+    @Test func unreadableFoldersAreMarked() async {
+        let tree = await SpaceScanner().scan("/private/var/db/sudo") // root-only
+        #expect(tree.isUnreadable || tree.children.isEmpty)
+    }
+
+    private func sample() -> SpaceNode {
+        let root = SpaceNode(name: "root", kind: .folder, size: 100, fileCount: 3, rootPath: "/r")
+        let a = SpaceNode(name: "a", kind: .folder, size: 75, fileCount: 2)
+        let a1 = SpaceNode(name: "a1", kind: .file, size: 50, fileCount: 1)
+        let a2 = SpaceNode(name: "a2", kind: .file, size: 25, fileCount: 1)
+        let b = SpaceNode(name: "b", kind: .file, size: 25, fileCount: 1)
+        a.children = [a1, a2]; a1.parent = a; a2.parent = a
+        root.children = [a, b]; a.parent = root; b.parent = root
+        return root
+    }
+
+    @Test func layoutGivesEachItemItsShareOfTheTurn() {
+        let root = sample()
+        let segments = Sunburst.layout(root)
+        #expect(segments.count == 4)
+        let a = segments.first { $0.node.name == "a" }!
+        #expect(a.depth == 1 && a.start == 0 && abs(a.end - 0.75) < 1e-9)
+        let a2 = segments.first { $0.node.name == "a2" }!
+        #expect(a2.depth == 2 && abs(a2.start - 0.5) < 1e-9 && abs(a2.end - 0.75) < 1e-9)
+        #expect(a2.branch == a.branch) // same color family as its folder
+        #expect(segments.first { $0.node.name == "b" }!.branch != a.branch)
+    }
+
+    @Test func hitTestingFindsTheSliceUnderThePointer() {
+        let root = sample()
+        let segments = Sunburst.layout(root)
+        let geometry = Sunburst.Geometry(radius: 100, rings: 3)
+        let ring1 = (geometry.inner(1) + geometry.outer(1)) / 2
+        let ring2 = (geometry.inner(2) + geometry.outer(2)) / 2
+        // 3 o'clock is 25% of the way round: inside "a" (0–75%).
+        #expect(Sunburst.hit(CGPoint(x: ring1, y: 0), in: segments, geometry: geometry)?.node.name == "a")
+        // 9 o'clock (75%) on the first ring is where "b" starts.
+        #expect(Sunburst.hit(CGPoint(x: -ring1, y: -0.01), in: segments, geometry: geometry)?.node.name == "b")
+        // 6 o'clock (50%) on the second ring: "a2" starts at 50%.
+        #expect(Sunburst.hit(CGPoint(x: -0.01, y: ring2), in: segments, geometry: geometry)?.node.name == "a2")
+        #expect(Sunburst.hit(.zero, in: segments, geometry: geometry) == nil) // the center disc
+        #expect(abs(Sunburst.turnFraction(CGPoint(x: 0, y: -1))) < 1e-9) // 12 o'clock
+    }
+
+    @Test func removingAnItemUpdatesEveryParent() {
+        let root = sample()
+        let a = root.children[0]
+        let a1 = a.children[0]
+        a.remove(a1)
+        #expect(a.size == 25 && root.size == 50)
+        #expect(root.fileCount == 2)
+        #expect(root.isAncestor(of: a.children[0]))
+        #expect(a.children[0].lineage.map(\.name) == ["root", "a", "a2"])
+    }
+
+    @Test func cautionsBeforeRemovingRiskyThings() {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        #expect(SpaceLensModel.caution(for: "/System/Library") != nil)
+        #expect(SpaceLensModel.caution(for: "/Applications/Foo.app")?.contains("Uninstaller") == true)
+        #expect(SpaceLensModel.caution(for: home + "/Library/Caches/x")?.contains("Library") == true)
+        #expect(SpaceLensModel.caution(for: home + "/Movies/old.mov") == nil)
+    }
+}

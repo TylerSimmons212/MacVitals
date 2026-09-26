@@ -28,6 +28,7 @@ struct SectionGuide: Sendable {
         case .ports: ports
         case .cleanup: cleanup
         case .junk: junk
+        case .spaceLens: spaceLens
         case .uninstaller: uninstaller
         case .startup: startup
         case .protection: protection
@@ -362,6 +363,33 @@ struct SectionGuide: Sendable {
             Term(term: "Verified developer", meaning: "Signed with a Developer ID or through the Mac App Store, so Apple knows who made it."),
             Term(term: "Ad hoc signature", meaning: "Signed on the machine that built it, not by a known developer. Normal for open-source tools."),
             Term(term: "Launch agent / daemon", meaning: "A program macOS starts automatically, for you (agent) or for every user (daemon)."),
+        ]
+    )
+
+    static let spaceLens = SectionGuide(
+        title: "Understanding Space Lens",
+        summary: "A map of where your disk space goes. The folder you're in is in the middle; each ring around it is one level deeper. The bigger the slice, the more space it takes.",
+        healthy: [
+            "Your Library folder is often one of the biggest. Apps keep caches, data and iPhone backups there.",
+            "Big slices aren't bad by themselves. Photos, music and projects are supposed to take space.",
+            "Files not downloaded from iCloud don't take space on this Mac, so they count as zero.",
+        ],
+        culprits: [
+            "Old videos, disk images and virtual machines you forgot about.",
+            "Developer folders: node_modules, build folders, simulators and package caches.",
+            "Downloads that were never cleaned up.",
+            "Old iPhone backups and Messages attachments in Library.",
+        ],
+        fixes: [
+            "Click a slice to open it; click the middle to go back out.",
+            "Hover a row for Show in Finder and Move to Trash. Everything goes to the Trash first, so you can put it back.",
+            "For apps, use the Uninstaller; it removes their leftovers too. For caches and build data, Junk is safer.",
+        ],
+        glossary: [
+            Term(term: "Size on disk", meaning: "Space a file actually uses, which can differ from its length (compression, sparse files)."),
+            Term(term: "Smaller files", meaning: "All the files in a folder beyond its 12 largest, added together."),
+            Term(term: "macOS and hidden space", meaning: "Whole-Mac view only: space used by macOS itself, local Time Machine snapshots, and folders Mac Vitals can't read."),
+            Term(term: "Hard link", meaning: "One file that appears in several places. Counted once."),
         ]
     )
 

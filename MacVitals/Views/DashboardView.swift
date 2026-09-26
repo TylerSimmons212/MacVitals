@@ -108,6 +108,7 @@ struct DashboardView: View {
         case .protection: ProtectionView()
         case .cleanup: SmartCleanView()
         case .junk: JunkView()
+        case .spaceLens: SpaceLensView()
         case .uninstaller: UninstallerView()
         case .startup: StartupItemsView()
         }

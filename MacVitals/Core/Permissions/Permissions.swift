@@ -385,7 +385,9 @@ private struct PermissionHelperView: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 22))
         .animation(.spring(response: 0.45, dampingFraction: 0.75), value: state.granted)
         .onAppear {
-            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { nudge = true }
+            // A few bobs to catch the eye, then still (a forever animation keeps SwiftUI redrawing
+            // every frame for as long as the helper is open).
+            withAnimation(.easeInOut(duration: 0.9).repeatCount(5, autoreverses: true)) { nudge = true }
         }
     }
 }

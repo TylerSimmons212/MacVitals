@@ -385,6 +385,7 @@ private struct StorageBreakdownCard: View {
     @Environment(StorageModel.self) private var storage
     @Environment(SystemMonitor.self) private var monitor
     @Environment(Permissions.self) private var permissions
+    @Environment(Router.self) private var router
     @State private var expanded: Set<StorageKind> = []
 
     var body: some View {
@@ -411,6 +412,11 @@ private struct StorageBreakdownCard: View {
                         .controlSize(.small)
                         .pointerStyle(.link)
                         .disabled(storage.phase == .scanning)
+                    Button { router.section = .spaceLens } label: { Label("Explore", systemImage: "chart.pie") }
+                        .buttonStyle(.glass)
+                        .controlSize(.small)
+                        .pointerStyle(.link)
+                        .help("Open Space Lens to explore folder by folder")
                 }
             }
         }
