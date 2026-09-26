@@ -3,6 +3,16 @@
     <channel>
         <title>Mac Vitals</title>
         <item>
+            <title>0.4.0</title>
+            <pubDate>Fri, 25 Sep 2026 20:43:03 -0700</pubDate>
+            <link>https://github.com/TylerSimmons212/MacVitals</link>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <sparkle:releaseNotesLink>https://github.com/TylerSimmons212/MacVitals/releases/tag/v0.4.0</sparkle:releaseNotesLink>
+            <enclosure url="https://github.com/TylerSimmons212/MacVitals/releases/download/v0.4.0/MacVitals-0.4.0.dmg" length="7372206" type="application/octet-stream" sparkle:edSignature="ml6pnjFqPWQLyuSt4cxS+giPBeMXA88tx8rdxzp+IAD1d6CtZ8MbeHmp/mt8ZeNSvoXc3/qGCTzlAs/pIuPgBg=="/>
+        </item>
+        <item>
             <title>0.3.0</title>
             <pubDate>Fri, 25 Sep 2026 20:28:09 -0700</pubDate>
             <link>https://github.com/TylerSimmons212/MacVitals</link>
