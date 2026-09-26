@@ -81,7 +81,27 @@ struct PermissionControl: View {
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(.green)
                     .transition(.scale.combined(with: .opacity))
-                    .help("On in System Settings › Privacy & Security › \(kind.systemName)")
+                    .help(kind == .appManagement
+                          ? "Confirmed by you or by a successful uninstall. If an uninstall is ever blocked, Mac Vitals will ask again."
+                          : "On in System Settings › Privacy & Security › \(kind.systemName)")
+            } else if kind == .appManagement && status == .unknown {
+                // macOS keeps this switch private even from apps with Full Disk Access, so don't
+                // nag with "Allow": say so, and let you confirm it once.
+                VStack(alignment: .trailing, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Button("It's On") { permissions.confirmAppManagementOn() }
+                            .buttonStyle(.glass)
+                            .pointerStyle(.link)
+                            .help("You've already switched Mac Vitals on under App Management")
+                        Button("Open Settings") { permissions.request(kind) }
+                            .buttonStyle(.glassProminent)
+                            .tint(kind.tint)
+                            .pointerStyle(.link)
+                    }
+                    Text("macOS doesn't let apps check this one")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
             } else if permissions.waitingFor == kind {
                 HStack(spacing: 6) {
                     ProgressView().controlSize(.small)

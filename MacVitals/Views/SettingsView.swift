@@ -5,8 +5,9 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             Tab("General", systemImage: "gearshape") { GeneralSettings() }
-            Tab("Notifications", systemImage: "bell") { NotificationSettings() }
-            Tab("Permissions", systemImage: "hand.raised") { PermissionSettings() }
+            // These two grow with every feature: scroll inside a window that fits any screen.
+            Tab("Notifications", systemImage: "bell") { ScrollView { NotificationSettings().padding(.trailing, 6) }.frame(height: 560) }
+            Tab("Permissions", systemImage: "hand.raised") { ScrollView { PermissionSettings().padding(.trailing, 6) }.frame(height: 560) }
         }
         .scenePadding()
         .frame(width: 560)
