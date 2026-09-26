@@ -159,7 +159,9 @@ enum AlertBuilder {
                 guard let app = apps[appID], !app.isCurrentApp else { continue }
                 for flag in flags {
                     switch flag {
-                    case .stuckBusy(let cpu, let minutes):
+                    // The Apps page flags 5 minutes busy; interrupting you waits for 10
+                    // (exports, builds and installs often run a few minutes).
+                    case .stuckBusy(let cpu, let minutes) where minutes >= 10:
                         alerts.append(Alert(
                             id: "stuck:" + appID, kind: .stuckApps, severity: 1, title: "\(app.name) seems stuck",
                             body: "It's been using \(Fmt.percent(cpu)) of a core for \(minutes) minutes. If you're not waiting on it, quitting and reopening usually fixes it.",
@@ -169,6 +171,8 @@ enum AlertBuilder {
                             id: "leak:" + appID, kind: .stuckApps, severity: 1, title: "\(app.name)'s memory keeps growing",
                             body: "Up to \(Fmt.memory(to)) over \(minutes) minutes and not coming back down. Restarting it frees the memory.",
                             section: .apps, cooldown: 6 * 3600, appID: appID, appName: app.name))
+                    case .stuckBusy:
+                        break
                     }
                 }
             }

@@ -2421,8 +2421,10 @@ struct NotificationTests {
     @Test func buildsPlainAlertsFromHealth() {
         let disk = HealthIssue(id: "disk", severity: .critical, title: "", detail: "", penalty: 0, section: .disk, metric: "4.2 GB left")
         let memoryWarning = HealthIssue(id: "memory", severity: .warning, title: "", detail: "", penalty: 0, section: .memory)
-        let apps = ["zoom": AppSnapshotInfo(name: "Zoom", isCurrentApp: false), "self": AppSnapshotInfo(name: "Mac Vitals", isCurrentApp: true)]
-        let flags: [String: [AppInsights.Flag]] = ["zoom": [.stuckBusy(averageCPU: 98, minutes: 12)], "self": [.stuckBusy(averageCPU: 50, minutes: 10)]]
+        let apps = ["zoom": AppSnapshotInfo(name: "Zoom", isCurrentApp: false), "self": AppSnapshotInfo(name: "Mac Vitals", isCurrentApp: true),
+                    "export": AppSnapshotInfo(name: "Final Cut", isCurrentApp: false)]
+        let flags: [String: [AppInsights.Flag]] = ["zoom": [.stuckBusy(averageCPU: 98, minutes: 12)], "self": [.stuckBusy(averageCPU: 50, minutes: 10)],
+                                                   "export": [.stuckBusy(averageCPU: 95, minutes: 6)]] // too soon to interrupt
         let alerts = AlertBuilder.conditions(report: report([disk, memoryWarning]), appFlags: flags, apps: apps,
                                              topMemoryApp: nil, topCPUApp: nil, enabled: Set(AlertKind.allCases))
         #expect(alerts.map(\.id).sorted() == ["disk", "stuck:zoom"]) // memory warning is too common to alert on; never ourselves
