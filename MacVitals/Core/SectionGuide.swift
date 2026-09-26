@@ -31,6 +31,7 @@ struct SectionGuide: Sendable {
         case .spaceLens: spaceLens
         case .duplicates: duplicates
         case .screenshots: screenshots
+        case .maintenance: maintenance
         case .uninstaller: uninstaller
         case .startup: startup
         case .protection: protection
@@ -438,6 +439,31 @@ struct SectionGuide: Sendable {
             Term(term: "Photos Library", meaning: "Screenshots in Photos, found by the screenshot tag Photos adds."),
             Term(term: "Files", meaning: "Screenshot files anywhere in your home folder, found by the tag macOS adds to every screenshot."),
             Term(term: "Recently Deleted", meaning: "Photos keeps deleted items there for 30 days before removing them for good."),
+        ]
+    )
+
+    static let maintenance = SectionGuide(
+        title: "Understanding Maintenance",
+        summary: "Fixes for specific problems, each listed by the symptom it solves. macOS maintains itself, so none of these need running on a schedule.",
+        healthy: [
+            "You don't need to run anything here unless something is wrong.",
+            "Local Time Machine snapshots come and go on their own; macOS removes them when it needs space.",
+        ],
+        culprits: [
+            "A stuck Finder or Dock after a crash or an update.",
+            "Stale saved data: DNS after switching networks, thumbnails, the \"Open With\" list.",
+            "A damaged Spotlight index, usually after a migration or a crash.",
+        ],
+        fixes: [
+            "Find the symptom you're seeing and press its button.",
+            "Tasks with a lock ask for your password through macOS, on behalf of Mac Vitals.",
+            "Rebuilding Spotlight makes your Mac busy for a few hours; do it plugged in, before a break.",
+        ],
+        glossary: [
+            Term(term: "DNS cache", meaning: "Saved addresses of websites your Mac has visited recently."),
+            Term(term: "Launch Services", meaning: "macOS's list of installed apps and which files each one opens."),
+            Term(term: "Local snapshot", meaning: "A Time Machine restore point kept on your Mac between backups."),
+            Term(term: "Spotlight index", meaning: "The catalog Spotlight searches instead of reading every file each time."),
         ]
     )
 
