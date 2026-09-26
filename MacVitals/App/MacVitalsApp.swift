@@ -37,6 +37,7 @@ struct MacVitalsApp: App {
             NotificationCenter.default.post(name: .openDashboard, object: nil)
         }
         AlertCenter.shared.configure(updates: updates)
+        _ = AppUpdater.shared // starts Sparkle's daily check
         let showDashboard = UserDefaults.standard.object(forKey: SettingsKeys.showDashboardAtLaunch) as? Bool ?? true
         dashboardLaunchBehavior = showDashboard ? .presented : .suppressed
     }
@@ -68,6 +69,12 @@ struct MacVitalsApp: App {
         // Otherwise macOS window restoration reopens the dashboard and ignores the setting.
         .restorationBehavior(.disabled)
         .windowToolbarStyle(.unified)
+        .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") { AppUpdater.shared.checkForUpdates() }
+                    .disabled(!AppUpdater.shared.canCheckForUpdates)
+            }
+        }
 
         MenuBarExtra {
             MenuBarPanel()

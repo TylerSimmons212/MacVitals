@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Sparkle: where Mac Vitals looks for its own updates, and the key they must be signed with
+	     (the same EdDSA key as Speek and VideoPro, kept in the login keychain). -->
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/TylerSimmons212/MacVitals/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>qEWeFK8yNh0gb7jhHr+b/dGZsFgfeanZpzEYLmkOkDM=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
+</dict>
+</plist>

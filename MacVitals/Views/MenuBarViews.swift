@@ -306,6 +306,8 @@ struct MenuBarPanel: View {
                     NSApp.activate()
                     NSApp.orderFrontStandardAboutPanel(nil)
                 }
+                Button("Check for Updates…") { AppUpdater.shared.checkForUpdates() }
+                    .disabled(!AppUpdater.shared.canCheckForUpdates)
                 Divider()
                 Button("Quit Mac Vitals") { NSApp.terminate(nil) }
                     .keyboardShortcut("q", modifiers: .command)

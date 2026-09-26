@@ -52,6 +52,8 @@ private struct GeneralSettings: View {
     @AppStorage(SettingsKeys.showDashboardAtLaunch) private var showDashboardAtLaunch = true
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
+    @State private var autoCheck = AppUpdater.shared.automaticallyChecks
+    @State private var autoDownload = AppUpdater.shared.automaticallyDownloads
 
     var body: some View {
         Form {
@@ -74,6 +76,19 @@ private struct GeneralSettings: View {
                     Text("1 second").tag(1.0)
                     Text("2 seconds").tag(2.0)
                     Text("5 seconds").tag(5.0)
+                }
+            }
+            Section("Updates") {
+                Toggle("Check for updates automatically", isOn: Binding(
+                    get: { autoCheck }, set: { autoCheck = $0; AppUpdater.shared.automaticallyChecks = $0 }))
+                Toggle("Download and install updates automatically", isOn: Binding(
+                    get: { autoDownload }, set: { autoDownload = $0; AppUpdater.shared.automaticallyDownloads = $0 }))
+                    .disabled(!autoCheck)
+                HStack {
+                    Text("Mac Vitals \(AppUpdater.version)").foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Check Now") { AppUpdater.shared.checkForUpdates() }
+                        .pointerStyle(.link)
                 }
             }
             Section("Appearance") {

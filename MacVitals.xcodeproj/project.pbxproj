@@ -17,6 +17,7 @@
 		1808D569A62AD050E70829F8 /* ProtectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F3607BD600F35EA3579BD0 /* ProtectionModel.swift */; };
 		18520A708E949658311E1DDB /* UpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCF99F2B56D4C7A2E07B77AF /* UpdatesView.swift */; };
 		1CE506286C553779543A4068 /* AppActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7147B1DCFCEDD8DB77B723 /* AppActivity.swift */; };
+		1D15A78A3077B52AA84DF117 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = B258FA740C51D1F4911A8AE9 /* Sparkle */; };
 		1D51E14C9320C9386DE98108 /* JunkScanners.swift in Sources */ = {isa = PBXBuildFile; fileRef = D25263816C9D3FD3EA5D3C18 /* JunkScanners.swift */; };
 		27407AE9EAFEBBE346F69161 /* HistoryRangePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE72F07628736EC3E98A4E4F /* HistoryRangePicker.swift */; };
 		2FE4D144254C8606D2E07EAE /* ExtensionsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4748E1BB44F9C1E291C9612C /* ExtensionsModel.swift */; };
@@ -66,6 +67,7 @@
 		98B6683ABF2B0EDFDC634138 /* UpdatesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C9B78DCAE88182006FC9A2 /* UpdatesModel.swift */; };
 		9D9B54FFB0F4486B9C4F40EA /* StartupModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E5158E7738C563C41A40D5 /* StartupModel.swift */; };
 		9EA8058B605DDFB402D4526B /* ProcessSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B49C444C4BD1833DEC2F03 /* ProcessSampler.swift */; };
+		A61EEF9F640EA31FF032877C /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8052A3232F11660351322615 /* AppUpdater.swift */; };
 		A789BC0D4B9F04FCE3C8E91E /* DuplicatesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AF40B6A48B5D3A580CADC5 /* DuplicatesModel.swift */; };
 		A829B56BBB4F0F47E6EC5C57 /* SimilarPhotosSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F5AF76BE814AFD8090F3A9 /* SimilarPhotosSection.swift */; };
 		AC77BEA9FCE32811DF38111E /* AppInventory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9041706D0ACB65C799EDCCE /* AppInventory.swift */; };
@@ -176,6 +178,7 @@
 		78F5AF76BE814AFD8090F3A9 /* SimilarPhotosSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimilarPhotosSection.swift; sourceTree = "<group>"; };
 		7B780A74948EE977C9871F8F /* MacVitalsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacVitalsApp.swift; sourceTree = "<group>"; };
 		7BFB6B5C9781126FAFBEA4FC /* ExtensionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionsView.swift; sourceTree = "<group>"; };
+		8052A3232F11660351322615 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		8C8575E5A6D67850287CBBE3 /* DiskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskView.swift; sourceTree = "<group>"; };
 		8CCD14E642A3923E46FA9761 /* AlertCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertCenter.swift; sourceTree = "<group>"; };
 		8F96A44B59665A2FA983217B /* Appcast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appcast.swift; sourceTree = "<group>"; };
@@ -233,6 +236,17 @@
 		FE47FA233D070FBC38B16C9D /* UninstallerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallerModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		D6120A0F627A24271260CA29 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1D15A78A3077B52AA84DF117 /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
 		17F7DF137DCFA18A64971858 /* Protection */ = {
 			isa = PBXGroup;
@@ -243,6 +257,14 @@
 				E5F3607BD600F35EA3579BD0 /* ProtectionModel.swift */,
 			);
 			path = Protection;
+			sourceTree = "<group>";
+		};
+		1C3BDFF86093CC05CA4FDB28 /* SelfUpdate */ = {
+			isa = PBXGroup;
+			children = (
+				8052A3232F11660351322615 /* AppUpdater.swift */,
+			);
+			path = SelfUpdate;
 			sourceTree = "<group>";
 		};
 		28496BCE85892D39DA1EEDFB /* Products */ = {
@@ -268,6 +290,7 @@
 				D6348312D0DB35AA28F0D081 /* Ports */,
 				17F7DF137DCFA18A64971858 /* Protection */,
 				5A3F5BF05FBC0EE34B9AA4C8 /* Samplers */,
+				1C3BDFF86093CC05CA4FDB28 /* SelfUpdate */,
 				63A05FFE4F653136D8F7BF18 /* SpaceLens */,
 				3029B0F80A325842F6F92C0B /* Storage */,
 				5EB42620E52040F2CCAA37AF /* Updates */,
@@ -540,6 +563,7 @@
 			buildPhases = (
 				FED1BCEE19EEB017F5D4D8EE /* Sources */,
 				2511B14880D0F3E896485186 /* Resources */,
+				D6120A0F627A24271260CA29 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -547,6 +571,7 @@
 			);
 			name = MacVitals;
 			packageProductDependencies = (
+				B258FA740C51D1F4911A8AE9 /* Sparkle */,
 			);
 			productName = MacVitals;
 			productReference = 1AB14DA5F5792B08B3A946FE /* MacVitals.app */;
@@ -598,6 +623,9 @@
 			);
 			mainGroup = 8390BE83F86F4E082B699CA3;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0F1F2BD5876957299670BF2D /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 28496BCE85892D39DA1EEDFB /* Products */;
 			projectDirPath = "";
@@ -639,6 +667,7 @@
 				5BEDE1501F794E966E80D09F /* AppInsights.swift in Sources */,
 				AC77BEA9FCE32811DF38111E /* AppInventory.swift in Sources */,
 				4536137B08AEA61DCCB0C8EB /* AppRows.swift in Sources */,
+				A61EEF9F640EA31FF032877C /* AppUpdater.swift in Sources */,
 				D2C36C0E4456C9BB8D3257CD /* Appcast.swift in Sources */,
 				57213CF6E143F199B1F8FEC5 /* AppsView.swift in Sources */,
 				FCC8E242C9AEFFBBF8BDE253 /* BatteryInsights.swift in Sources */,
@@ -758,6 +787,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_APP_SANDBOX = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MacVitals/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Mac Vitals";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -869,6 +899,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MacVitals/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Mac Vitals";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -1007,6 +1038,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0F1F2BD5876957299670BF2D /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B258FA740C51D1F4911A8AE9 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0F1F2BD5876957299670BF2D /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2207678708EF9B226EA8DEBC /* Project object */;
 }

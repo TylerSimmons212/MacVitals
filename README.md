@@ -81,6 +81,19 @@ reads the full list once per session through Mac Vitals' own prompt (`BTMAccess`
 Developer ID (`project.yml`); ad-hoc signing made every rebuild look like a new app and silently dropped
 them. Release omits `get-task-allow` so it can be notarized.
 
+## Releases and updates
+
+Mac Vitals updates itself with Sparkle, like Speek and VideoPro: `SUFeedURL` points at `appcast.xml`
+on this repo's main branch, downloads are GitHub release assets, and every update is signed with the
+shared EdDSA key (login keychain) and the Developer ID, then notarized.
+
+1. Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml` (the build number must go up).
+2. `scripts/release.sh --install --publish`: archive, DMG, notarize + staple, sign the update, write
+   `appcast.xml`, install locally, then create the GitHub release *before* pushing the appcast.
+
+Installed copies check daily (Settings › General › Updates), or via Mac Vitals › Check for Updates….
+The Updates page hands Mac Vitals' own update to Sparkle instead of replacing itself.
+
 ## Notifications
 
 Settings › Notifications: disk almost full, memory critical, running hot, apps stuck or leaking
