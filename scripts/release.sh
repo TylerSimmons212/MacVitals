@@ -153,7 +153,17 @@ if [ "$PUBLISH" = 1 ]; then
   git add appcast.xml MacVitals.xcodeproj/project.pbxproj
   git commit -m "Release $VERSION appcast"
   git push origin HEAD
-  echo "🎉 Published. Installed copies will find it at their next daily check (or Check for Updates…)."
+  # raw.githubusercontent.com caches for up to 5 minutes: wait until the plain URL (the one
+  # installed copies fetch) serves this version, so "Published" means "installed apps can see it".
+  echo "⏳ Waiting for GitHub's CDN to serve the new appcast"
+  for _ in $(seq 1 40); do
+    if curl -fsSL "https://raw.githubusercontent.com/$REPO/main/appcast.xml" | grep -q "<sparkle:shortVersionString>$VERSION<"; then
+      echo "🎉 Published and live. Installed copies will see $VERSION at their next check (or Check for Updates…)."
+      exit 0
+    fi
+    sleep 10
+  done
+  echo "🎉 Published. The CDN is still serving the old appcast; installed copies will see $VERSION within a few minutes."
 else
   echo ""
   echo "🎉 Built $DMG"
