@@ -29,6 +29,7 @@ struct SectionGuide: Sendable {
         case .cleanup: cleanup
         case .junk: junk
         case .spaceLens: spaceLens
+        case .duplicates: duplicates
         case .uninstaller: uninstaller
         case .startup: startup
         case .protection: protection
@@ -389,6 +390,30 @@ struct SectionGuide: Sendable {
             Term(term: "Same developer", meaning: "The update must carry the same Apple-issued Team ID as the installed app, or it isn't installed."),
             Term(term: "Homebrew cask", meaning: "An app installed with Homebrew. Updated with brew upgrade."),
             Term(term: "Critical update", meaning: "Marked important by the developer, usually a security fix."),
+        ]
+    )
+
+    static let duplicates = SectionGuide(
+        title: "Understanding Duplicates",
+        summary: "Files whose contents are exactly the same, byte for byte, in the folders you choose, and how much space removing the extra copies would really free.",
+        healthy: [
+            "A few duplicates is normal: the same photo saved twice, an attachment downloaded again.",
+            "Copies made with Finder's Duplicate often share their data on disk (APFS), so they take no extra space. Mac Vitals sets those aside.",
+        ],
+        culprits: [
+            "Downloading the same file more than once (\"Report (1).pdf\").",
+            "Photos and videos imported or exported twice.",
+            "Old backups copied into Documents or iCloud Drive.",
+        ],
+        fixes: [
+            "Mac Vitals picks the copy to keep: the one in Documents, Pictures and the like, with the original name, usually the oldest. Change any with the checkboxes.",
+            "One copy of every file always stays; you can't select them all.",
+            "Everything goes to the Trash first. Removing a file from iCloud Drive removes it from your other devices too.",
+        ],
+        glossary: [
+            Term(term: "Byte for byte", meaning: "Compared by content (SHA-256 fingerprint), not by name or date."),
+            Term(term: "Shares space (APFS clone)", meaning: "A copy that points to the same data on disk as the original until one is edited. Removing it frees nothing."),
+            Term(term: "Hard link", meaning: "One file with two names. Not a duplicate, and not counted."),
         ]
     )
 
