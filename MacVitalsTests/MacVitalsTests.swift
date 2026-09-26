@@ -2597,3 +2597,49 @@ struct ExtensionTests {
         #expect(owners.owner(bundleID: "com.macpaw.cleanmymac5.helper", name: nil) == "CleanMyMac")
     }
 }
+
+@Suite("Not responding")
+@MainActor
+struct NotRespondingTests {
+    private let t0 = Date(timeIntervalSince1970: 1_000_000)
+    private let names: [pid_t: (String, String?)] = [42: ("Frozen App", "/Applications/Frozen.app"), 7: ("Fine App", nil)]
+
+    @Test func frozenOnlyAfterTwoMissesInARow() {
+        let checker = Responsiveness()
+        checker.record([42: .noAnswer, 7: .answered], names: names, now: t0)
+        #expect(checker.frozen.isEmpty) // one miss could be a hiccup
+        checker.record([42: .noAnswer, 7: .answered], names: names, now: t0.addingTimeInterval(10))
+        #expect(checker.frozen.map(\.name) == ["Frozen App"])
+        #expect(checker.frozen.first?.since == t0) // counted from the first miss
+        #expect(checker.frozen.first?.seconds(now: t0.addingTimeInterval(45)) == 45)
+        // It recovers: cleared right away.
+        checker.record([42: .answered, 7: .answered], names: names, now: t0.addingTimeInterval(20))
+        #expect(checker.frozen.isEmpty)
+        // "Couldn't tell" (e.g. no permission) never counts as frozen.
+        checker.record([42: .unknown], names: names, now: t0.addingTimeInterval(30))
+        checker.record([42: .unknown], names: names, now: t0.addingTimeInterval(40))
+        #expect(checker.frozen.isEmpty)
+    }
+
+    @Test func showsUpInHealth() {
+        let frozen = FrozenApp(pid: 42, name: "Frozen App", bundlePath: nil, since: Date().addingTimeInterval(-90))
+        let report = HealthEvaluator.evaluate(HealthInputs(cpuAverage: 5, memory: .zero, disk: .zero, battery: nil,
+                                                           thermal: .nominal, uptime: 3600, frozenApps: [frozen]))
+        let issue = report.issues.first { $0.id == "notResponding" }
+        #expect(issue?.title == "Frozen App isn't responding")
+        #expect(issue?.severity == .critical) // over a minute
+        #expect(issue?.section == .apps)
+    }
+
+    @Test func notifiesAfterThirtySecondsWithForceQuit() {
+        let now = Date()
+        let brief = FrozenApp(pid: 1, name: "Brief", bundlePath: nil, since: now.addingTimeInterval(-15))
+        let long = FrozenApp(pid: 2, name: "Long", bundlePath: "/Applications/Long.app", since: now.addingTimeInterval(-40))
+        let alerts = AlertBuilder.conditions(report: HealthReport(score: 100, issues: []), appFlags: [:], apps: [:],
+                                             topMemoryApp: nil, topCPUApp: nil, enabled: [.notResponding], frozen: [brief, long], now: now)
+        #expect(alerts.map(\.title) == ["Long isn't responding"])
+        #expect(alerts.first?.pid == 2)
+        #expect(AlertBuilder.conditions(report: HealthReport(score: 100, issues: []), appFlags: [:], apps: [:],
+                                        topMemoryApp: nil, topCPUApp: nil, enabled: [], frozen: [long], now: now).isEmpty)
+    }
+}

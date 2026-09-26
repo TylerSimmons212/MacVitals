@@ -77,6 +77,8 @@ struct HealthInputs: Sendable {
     var battery: BatterySnapshot?
     var thermal: ThermalLevel
     var uptime: TimeInterval
+    /// Apps that stopped responding (needs Accessibility; empty otherwise).
+    var frozenApps: [FrozenApp] = []
 }
 
 /// Turns raw vitals into a 0–100 score plus plain-English issues.
@@ -182,6 +184,17 @@ enum HealthEvaluator {
                                     penalty: 5, section: .battery,
                                 shortTitle: "High cycle count", metric: "\(cycles) cycles"))
             }
+        }
+
+        // Frozen apps
+        if let first = input.frozenApps.first {
+            let seconds = first.seconds()
+            let others = input.frozenApps.count - 1
+            issues.append(.init(id: "notResponding", severity: seconds >= 60 ? .critical : .warning,
+                                title: others == 0 ? "\(first.name) isn't responding" : "\(first.name) and \(others) other app\(others == 1 ? "" : "s") aren't responding",
+                                detail: "It hasn't answered for \(seconds) seconds. Give it a moment, or force quit it (unsaved changes will be lost).",
+                                penalty: 10, section: .apps,
+                                shortTitle: "\(first.name) not responding", metric: seconds >= 60 ? "\(seconds / 60) min" : "\(seconds) s"))
         }
 
         // Uptime
