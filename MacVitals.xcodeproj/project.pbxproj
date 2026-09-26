@@ -25,6 +25,7 @@
 		3AE53E93736EFED1BE6C2579 /* DiskSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ED48EA85974612F142B5BC2 /* DiskSampler.swift */; };
 		3C2E7DAF3877717CD71C5083 /* MemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF94DEA850294D726FC62604 /* MemoryView.swift */; };
 		407BBB65D2A5630D232E7432 /* NetworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC18A957FE1E4A771224A4A /* NetworkView.swift */; };
+		42BEEE1B65ACE047233AFEFC /* DuplicatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3A7B3CDE4C5EB5607D59F7 /* DuplicatesView.swift */; };
 		42D6A59DA58FE8880969ABD0 /* MemorySampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EB67226C04C7D6AC30D77F /* MemorySampler.swift */; };
 		4536137B08AEA61DCCB0C8EB /* AppRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED60D2346358433DEBA2617C /* AppRows.swift */; };
 		530ADEBDC8D8B4155FE9A40C /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778C875D6756CA4129A0AE03 /* WelcomeView.swift */; };
@@ -57,6 +58,7 @@
 		98B6683ABF2B0EDFDC634138 /* UpdatesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C9B78DCAE88182006FC9A2 /* UpdatesModel.swift */; };
 		9D9B54FFB0F4486B9C4F40EA /* StartupModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E5158E7738C563C41A40D5 /* StartupModel.swift */; };
 		9EA8058B605DDFB402D4526B /* ProcessSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B49C444C4BD1833DEC2F03 /* ProcessSampler.swift */; };
+		A789BC0D4B9F04FCE3C8E91E /* DuplicatesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AF40B6A48B5D3A580CADC5 /* DuplicatesModel.swift */; };
 		AC77BEA9FCE32811DF38111E /* AppInventory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9041706D0ACB65C799EDCCE /* AppInventory.swift */; };
 		ACA05D5E3B89C033F028986E /* DiskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C8575E5A6D67850287CBBE3 /* DiskView.swift */; };
 		ADBAAF5752E66C3FCC761F1B /* NetworkInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A3DB5503F950F100F1924A /* NetworkInsights.swift */; };
@@ -71,6 +73,7 @@
 		CAD9D66161B508BE60922C20 /* UninstallerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE47FA233D070FBC38B16C9D /* UninstallerModel.swift */; };
 		CE31F0F94BAFA52EAECDB3B1 /* Health.swift in Sources */ = {isa = PBXBuildFile; fileRef = 042446A5B48593E7FB41964D /* Health.swift */; };
 		CFA1B7CFE1E127A713A1C7EF /* NetworkDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3490FBCC7E7C6588C76FA73 /* NetworkDiagnostics.swift */; };
+		CFCC09BE5E9EF6638CC66426 /* DuplicateScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 625288D4FB50FD2C14033ABE /* DuplicateScanner.swift */; };
 		D09F76AF55A2EDF8BDC200DE /* PermissionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B14C0B01FA3AA7FE82D5952C /* PermissionViews.swift */; };
 		D18E2FD744E942C33F95F318 /* DefenceChecks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A140D2921DCD646657BEA655 /* DefenceChecks.swift */; };
 		D2B8FCDF322E9198E1A6E86A /* OverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3199364279CB5A47893302BE /* OverviewView.swift */; };
@@ -132,9 +135,11 @@
 		520BC13E543D81EF1AC3B199 /* Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation.swift; sourceTree = "<group>"; };
 		5359D9624DB8ACE98CFA5D07 /* GuidePopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidePopover.swift; sourceTree = "<group>"; };
 		537F5D80939C6C8E5DCEF349 /* AppInsights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInsights.swift; sourceTree = "<group>"; };
+		5A3A7B3CDE4C5EB5607D59F7 /* DuplicatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicatesView.swift; sourceTree = "<group>"; };
 		5B9A4D6225C64A97C94F6FDA /* CleanupHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupHistory.swift; sourceTree = "<group>"; };
 		600C8C53027A5089686E8567 /* SpaceScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceScanner.swift; sourceTree = "<group>"; };
 		61DF8D3EA14F9381EA010924 /* FinderRemover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderRemover.swift; sourceTree = "<group>"; };
+		625288D4FB50FD2C14033ABE /* DuplicateScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateScanner.swift; sourceTree = "<group>"; };
 		68DBBE37D0A1D914C57041D4 /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
 		699B3B6B92B8944FE63882BD /* CleanupComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupComponents.swift; sourceTree = "<group>"; };
 		6A0B565A083763AE9FE4B6CF /* PermissionKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionKind.swift; sourceTree = "<group>"; };
@@ -146,6 +151,7 @@
 		774528E71FB79096704BCF37 /* CPUSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CPUSampler.swift; sourceTree = "<group>"; };
 		776F82B4DAE59A2C8716CFAE /* SystemMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitor.swift; sourceTree = "<group>"; };
 		778C875D6756CA4129A0AE03 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		78AF40B6A48B5D3A580CADC5 /* DuplicatesModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicatesModel.swift; sourceTree = "<group>"; };
 		7B780A74948EE977C9871F8F /* MacVitalsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacVitalsApp.swift; sourceTree = "<group>"; };
 		8C8575E5A6D67850287CBBE3 /* DiskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskView.swift; sourceTree = "<group>"; };
 		8F96A44B59665A2FA983217B /* Appcast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appcast.swift; sourceTree = "<group>"; };
@@ -223,6 +229,7 @@
 			children = (
 				99A213DA5AB115301CE995C8 /* Apps */,
 				C5B1BCACADDE03C0AAE8F153 /* Cleanup */,
+				8E27FD0B0DD85C0A5A226DA9 /* Duplicates */,
 				9D6602DF63CEA61567E28A72 /* Network */,
 				5E1985A699929377C246E623 /* Permissions */,
 				D6348312D0DB35AA28F0D081 /* Ports */,
@@ -307,6 +314,15 @@
 				E89E4F47A74BE5AAC3C16E0D /* MacVitalsTests */,
 				28496BCE85892D39DA1EEDFB /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		8E27FD0B0DD85C0A5A226DA9 /* Duplicates */ = {
+			isa = PBXGroup;
+			children = (
+				625288D4FB50FD2C14033ABE /* DuplicateScanner.swift */,
+				78AF40B6A48B5D3A580CADC5 /* DuplicatesModel.swift */,
+			);
+			path = Duplicates;
 			sourceTree = "<group>";
 		};
 		8ED4CC7FE01CD03C03679138 /* App */ = {
@@ -430,6 +446,7 @@
 				A14884DFE580E8A04AA510DD /* BatteryView.swift */,
 				D7A5493E0BE6CDB5B33C918E /* CPUView.swift */,
 				8C8575E5A6D67850287CBBE3 /* DiskView.swift */,
+				5A3A7B3CDE4C5EB5607D59F7 /* DuplicatesView.swift */,
 				C78E91AC9F3F540E9326E4E9 /* JunkView.swift */,
 				DF94DEA850294D726FC62604 /* MemoryView.swift */,
 				9BC18A957FE1E4A771224A4A /* NetworkView.swift */,
@@ -572,6 +589,9 @@
 				3AE53E93736EFED1BE6C2579 /* DiskSampler.swift in Sources */,
 				ACA05D5E3B89C033F028986E /* DiskView.swift in Sources */,
 				EAAE98067729EB295D0FD4BC /* DockIcon.swift in Sources */,
+				CFCC09BE5E9EF6638CC66426 /* DuplicateScanner.swift in Sources */,
+				A789BC0D4B9F04FCE3C8E91E /* DuplicatesModel.swift in Sources */,
+				42BEEE1B65ACE047233AFEFC /* DuplicatesView.swift in Sources */,
 				EC9C05DA9ED6D4E18507FB61 /* FinderRemover.swift in Sources */,
 				54A65F4B4754AEE2FFD056B9 /* Formatters.swift in Sources */,
 				7F636CFF96F605BC98F171D2 /* Glass.swift in Sources */,

@@ -36,6 +36,7 @@ MacVitals/
     Protection/   built-in defences, startup-item and app signature audits
     SpaceLens/    getattrlistbulk size scanner, sunburst layout
     Updates/      Sparkle appcasts, App Store lookup, Homebrew, verified installer
+    Duplicates/   exact duplicate finder (size → ends → SHA-256), clone-aware space, keep rules
     Ports/        listening-port / dev-server scanner
   Views/
     Components/   glass cards, tile visuals, charts, visibility tracking

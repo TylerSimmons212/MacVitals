@@ -2173,3 +2173,116 @@ struct UpdateTests {
         }
     }
 }
+
+@Suite("Duplicates")
+struct DuplicateTests {
+    private func random(_ count: Int) -> Data { Data((0..<count).map { _ in UInt8.random(in: 0...255) }) }
+
+    /// A home-like folder with planted duplicates of every kind.
+    private func makeTree() throws -> URL {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appending(path: "dupes-\(UUID().uuidString)")
+        for folder in ["Documents", "Downloads", "Desktop", "Documents/project/.git", "Documents/app/node_modules/x",
+                       "Documents/Thing.app/Contents", "Pictures", ".hidden"] {
+            try fm.createDirectory(at: root.appending(path: folder), withIntermediateDirectories: true)
+        }
+        let report = random(300_000)
+        // An independent copy (takes real space) plus a "copy"-named third one.
+        try report.write(to: root.appending(path: "Documents/Report.pdf"))
+        try report.write(to: root.appending(path: "Downloads/Report.pdf"))
+        try report.write(to: root.appending(path: "Desktop/Report copy.pdf"))
+        // A Finder-style clone: same contents, shares its data on APFS.
+        let video = random(400_000)
+        try video.write(to: root.appending(path: "Pictures/clip.mov"))
+        try fm.copyItem(at: root.appending(path: "Pictures/clip.mov"), to: root.appending(path: "Downloads/clip.mov"))
+        // Same size, different contents at the end: not duplicates.
+        var nearly = random(200_000)
+        try nearly.write(to: root.appending(path: "Documents/a.bin"))
+        nearly[nearly.count - 1] ^= 0xFF
+        try nearly.write(to: root.appending(path: "Documents/b.bin"))
+        // Hard link: one file under two names, not a duplicate.
+        try random(150_000).write(to: root.appending(path: "Documents/linked.dat"))
+        try fm.linkItem(at: root.appending(path: "Documents/linked.dat"), to: root.appending(path: "Downloads/linked.dat"))
+        // Copies that must never be touched: inside a git repo, node_modules, an app bundle, hidden.
+        for inside in ["Documents/project/lib.js", "Documents/app/node_modules/x/lib.js", "Documents/Thing.app/Contents/lib.js", ".hidden/lib.js"] {
+            try report.write(to: root.appending(path: inside))
+        }
+        // Too small to bother with.
+        try Data(count: 10).write(to: root.appending(path: "Documents/tiny1"))
+        try Data(count: 10).write(to: root.appending(path: "Documents/tiny2"))
+        return root
+    }
+
+    @Test func findsExactDuplicatesOnly() async throws {
+        let root = try makeTree()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let groups = await DuplicateScanner().scan(folders: [root.path], minimumSize: 100_000)
+        let byName = Dictionary(grouping: groups) { ($0.files[0].name as NSString).deletingPathExtension.replacingOccurrences(of: " copy", with: "") }
+        #expect(groups.count == 2)
+        let reports = try #require(byName["Report"]?.first)
+        #expect(Set(reports.files.map { ($0.path as NSString).lastPathComponent }) == ["Report.pdf", "Report copy.pdf"])
+        #expect(reports.files.count == 3) // repo, node_modules, app bundle and hidden copies ignored
+        #expect(!reports.sharesSpace)
+        #expect(reports.kind == .documents)
+        let clips = try #require(byName["clip"]?.first)
+        #expect(clips.files.count == 2)
+        #expect(clips.sharesSpace) // an APFS clone: deleting it frees nothing
+        #expect(clips.kind == .videos)
+    }
+
+    @Test func folderSelectionsDontDoubleCount() async throws {
+        let root = try makeTree()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let groups = await DuplicateScanner().scan(folders: [root.path, root.appending(path: "Documents").path], minimumSize: 100_000)
+        #expect(groups.first { $0.files[0].name.hasPrefix("Report") }?.files.count == 3)
+    }
+
+    @Test func privateSizeSeesSharedData() throws {
+        let fm = FileManager.default
+        let folder = fm.temporaryDirectory.appending(path: "private-\(UUID().uuidString)")
+        try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: folder) }
+        try random(1_000_000).write(to: folder.appending(path: "own.bin"))
+        #expect((DuplicateScanner.privateSize(folder.appending(path: "own.bin").path) ?? 0) >= 1_000_000)
+        try fm.copyItem(at: folder.appending(path: "own.bin"), to: folder.appending(path: "clone.bin"))
+        #expect(DuplicateScanner.privateSize(folder.appending(path: "clone.bin").path) == 0)
+    }
+
+    private func file(_ path: String, created: TimeInterval = 0) -> DuplicateFile {
+        DuplicateFile(path: path, size: 10, privateSize: 10, modified: Date(timeIntervalSince1970: created), created: Date(timeIntervalSince1970: created))
+    }
+
+    @Test func keepsTheCopyAPersonWould() {
+        let home = "/Users/me"
+        // Documents beats Downloads and Desktop.
+        #expect(KeepChooser.keeper(of: [file("/Users/me/Downloads/r.pdf"), file("/Users/me/Documents/r.pdf"), file("/Users/me/Desktop/r.pdf")],
+                                   home: home)?.path == "/Users/me/Documents/r.pdf")
+        // Same folder: the original name beats "copy", "(1)" and "-2".
+        for copyName in ["r copy.pdf", "r (1).pdf", "r-2.pdf", "r copy 3.pdf", "r 2.pdf"] {
+            #expect(KeepChooser.keeper(of: [file("/Users/me/Documents/\(copyName)", created: 0), file("/Users/me/Documents/r.pdf", created: 100)],
+                                       home: home)?.path == "/Users/me/Documents/r.pdf")
+        }
+        // "Trip 2" alone isn't a copy name; then the older one wins.
+        let trips = [file("/Users/me/Pictures/Trip 2.jpg", created: 50), file("/Users/me/Pictures/Other.jpg", created: 10)]
+        #expect(!KeepChooser.isCopyName(trips[0], among: trips))
+        #expect(KeepChooser.keeper(of: trips, home: home)?.path == "/Users/me/Pictures/Other.jpg")
+    }
+
+    @MainActor
+    @Test func neverSelectsEveryCopy() async throws {
+        let root = try makeTree()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = DuplicatesModel()
+        let groups = await DuplicateScanner().scan(folders: [root.path], minimumSize: 100_000)
+        model.load(groups)
+        let reports = try #require(model.groups.first { !$0.sharesSpace })
+        #expect(reports.files.filter(model.isSelected).count == 2) // auto: all but the keeper
+        #expect(model.groups.first(where: \.sharesSpace).map { $0.files.filter(model.isSelected).isEmpty } == true)
+        // Try to select the keeper too: refused.
+        let keeper = try #require(reports.files.first { !model.isSelected($0) })
+        #expect(!model.canSelect(keeper, in: reports))
+        model.toggle(keeper, in: reports)
+        #expect(!model.isSelected(keeper))
+        #expect(model.potential(reports) >= 600_000)
+    }
+}

@@ -120,6 +120,7 @@ struct DashboardView: View {
         case .cleanup: SmartCleanView()
         case .junk: JunkView()
         case .spaceLens: SpaceLensView()
+        case .duplicates: DuplicatesView()
         case .uninstaller: UninstallerView()
         case .startup: StartupItemsView()
         }
