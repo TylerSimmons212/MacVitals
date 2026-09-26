@@ -22,6 +22,8 @@ final class AlertCenter: NSObject, UNUserNotificationCenterDelegate {
     private static let quitAction = "quit"
     private static let showAction = "show"
     private static let appCategory = "app"
+    private static let frozenCategory = "frozen"
+    private static let forceQuitAction = "forceQuit"
 
     override init() {
         policy = UserDefaults.standard.data(forKey: Self.policyKey)
@@ -37,8 +39,10 @@ final class AlertCenter: NSObject, UNUserNotificationCenterDelegate {
         center.delegate = self
         let quit = UNNotificationAction(identifier: Self.quitAction, title: "Quit", options: [])
         let show = UNNotificationAction(identifier: Self.showAction, title: "Show", options: [.foreground])
+        let forceQuit = UNNotificationAction(identifier: Self.forceQuitAction, title: "Force Quit", options: [.destructive])
         center.setNotificationCategories([
             UNNotificationCategory(identifier: Self.appCategory, actions: [quit, show], intentIdentifiers: []),
+            UNNotificationCategory(identifier: Self.frozenCategory, actions: [forceQuit, show], intentIdentifiers: []),
         ])
         startBackgroundChecks()
     }
@@ -65,8 +69,8 @@ final class AlertCenter: NSObject, UNUserNotificationCenterDelegate {
             apps: apps.mapValues { AppSnapshotInfo(name: $0.name, isCurrentApp: $0.isCurrentApp) },
             topMemoryApp: visible.max { $0.memory < $1.memory }?.name,
             topCPUApp: visible.max { $0.cpu < $1.cpu }?.name,
-            enabled: enabled)
-        deliver(conditions, userIsLooking: userIsLooking, now: now, kinds: [.storage, .memory, .heat, .battery, .stuckApps])
+            enabled: enabled, frozen: Responsiveness.shared.frozen, now: now)
+        deliver(conditions, userIsLooking: userIsLooking, now: now, kinds: [.storage, .memory, .heat, .battery, .stuckApps, .notResponding])
     }
 
     // MARK: Background checks (protections every 6 h, updates daily)
@@ -117,9 +121,10 @@ final class AlertCenter: NSObject, UNUserNotificationCenterDelegate {
         content.title = alert.title
         content.body = alert.body
         content.sound = alert.severity >= 2 ? .default : nil
-        content.userInfo = ["section": alert.section.rawValue, "app": alert.appID ?? ""]
+        content.userInfo = ["section": alert.section.rawValue, "app": alert.appID ?? "", "pid": Int(alert.pid ?? 0)]
         content.threadIdentifier = alert.kind.rawValue
-        if alert.appID != nil { content.categoryIdentifier = Self.appCategory }
+        if alert.pid != nil { content.categoryIdentifier = Self.frozenCategory }
+        else if alert.appID != nil { content.categoryIdentifier = Self.appCategory }
         content.interruptionLevel = alert.severity >= 2 ? .active : .passive
         let request = UNNotificationRequest(identifier: alert.id, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
@@ -148,9 +153,13 @@ final class AlertCenter: NSObject, UNUserNotificationCenterDelegate {
         let info = response.notification.request.content.userInfo
         let section = (info["section"] as? String).flatMap(DashboardSection.init(rawValue:)) ?? .overview
         let appID = info["app"] as? String
+        let pid = info["pid"] as? Int ?? 0
         let action = response.actionIdentifier
         await MainActor.run {
-            if action == Self.quitAction, let appID, let app = self.apps[appID], ProcessController.canQuit(app) {
+            if action == Self.forceQuitAction, pid > 0,
+               let frozen = Responsiveness.shared.frozen.first(where: { $0.pid == pid_t(pid) }) {
+                Responsiveness.shared.forceQuit(frozen)
+            } else if action == Self.quitAction, let appID, let app = self.apps[appID], ProcessController.canQuit(app) {
                 ProcessController.quit(app, force: false)
             } else {
                 self.openSection?(section)
@@ -164,7 +173,7 @@ extension AlertPolicy {
     func firstSeenIDs(excludingKinds kinds: Set<AlertKind>) -> Set<String> {
         let prefixes: [AlertKind: [String]] = [
             .storage: ["disk"], .memory: ["memory"], .heat: ["thermal"], .battery: ["battery"],
-            .stuckApps: ["stuck:", "leak:"], .protection: ["protection:"], .importantUpdates: ["update:"], .updateDigest: ["digest:"],
+            .stuckApps: ["stuck:", "leak:"], .notResponding: ["frozen:"], .protection: ["protection:"], .importantUpdates: ["update:"], .updateDigest: ["digest:"],
         ]
         let owned = kinds.flatMap { prefixes[$0] ?? [] }
         return Set(firstSeen.keys.filter { id in !owned.contains { id.hasPrefix($0) } })

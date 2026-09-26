@@ -2,7 +2,7 @@ import Foundation
 
 /// The kinds of things Mac Vitals will interrupt you for. Each is a switch in Settings.
 enum AlertKind: String, CaseIterable, Codable, Sendable, Identifiable {
-    case storage, memory, heat, stuckApps, battery, protection, importantUpdates, updateDigest
+    case storage, memory, heat, notResponding, stuckApps, battery, protection, importantUpdates, updateDigest
 
     var id: String { rawValue }
 
@@ -11,6 +11,7 @@ enum AlertKind: String, CaseIterable, Codable, Sendable, Identifiable {
         case .storage: "Disk almost full"
         case .memory: "Memory running out"
         case .heat: "Mac running hot"
+        case .notResponding: "App not responding"
         case .stuckApps: "Apps stuck or leaking memory"
         case .battery: "Battery needs service"
         case .protection: "A protection is turned off"
@@ -24,6 +25,7 @@ enum AlertKind: String, CaseIterable, Codable, Sendable, Identifiable {
         case .storage: "When the startup disk is nearly full. At most once a day, sooner if it gets worse."
         case .memory: "When memory pressure stays critical for a few minutes."
         case .heat: "When macOS keeps slowing your Mac down to cool it."
+        case .notResponding: "An app frozen (spinning cursor) for 30+ seconds, with a Force Quit button. Needs the Accessibility permission."
         case .stuckApps: "An app busy nonstop for 10+ minutes, or one whose memory keeps growing. With a Quit button."
         case .battery: "When macOS says the battery needs service. Once a month at most."
         case .protection: "If FileVault, Gatekeeper or another built-in protection gets switched off. Checked every few hours."
@@ -37,6 +39,7 @@ enum AlertKind: String, CaseIterable, Codable, Sendable, Identifiable {
         case .storage: "internaldrive"
         case .memory: "memorychip"
         case .heat: "thermometer.high"
+        case .notResponding: "hourglass"
         case .stuckApps: "exclamationmark.triangle"
         case .battery: "battery.25percent"
         case .protection: "checkmark.shield"
@@ -66,6 +69,8 @@ struct Alert: Equatable, Sendable {
     /// For "Quit" on stuck-app alerts.
     var appID: String? = nil
     var appName: String? = nil
+    /// For "Force Quit" on not-responding alerts.
+    var pid: pid_t? = nil
 }
 
 /// Decides what to actually send: things that have lasted long enough, that you haven't just
@@ -122,8 +127,18 @@ struct AlertPolicy: Codable, Sendable {
 /// Turns what the monitor sees into alerts, in plain words.
 enum AlertBuilder {
     static func conditions(report: HealthReport, appFlags: [String: [AppInsights.Flag]], apps: [String: AppSnapshotInfo],
-                           topMemoryApp: String?, topCPUApp: String?, enabled: Set<AlertKind>) -> [Alert] {
+                           topMemoryApp: String?, topCPUApp: String?, enabled: Set<AlertKind>,
+                           frozen: [FrozenApp] = [], now: Date = Date()) -> [Alert] {
         var alerts: [Alert] = []
+        if enabled.contains(.notResponding) {
+            for app in frozen where app.seconds(now: now) >= 30 {
+                alerts.append(Alert(
+                    id: "frozen:" + (app.bundlePath ?? app.name), kind: .notResponding, severity: 2,
+                    title: "\(app.name) isn't responding",
+                    body: "It hasn't answered for \(app.seconds(now: now)) seconds. Wait a little longer, or force quit it (unsaved changes will be lost).",
+                    section: .apps, cooldown: 3600, appName: app.name, pid: app.pid))
+            }
+        }
         func issue(_ id: String) -> HealthIssue? { report.issues.first { $0.id == id } }
 
         if enabled.contains(.storage), let disk = issue("disk"), disk.severity >= .warning {

@@ -30,6 +30,7 @@
 		42BEEE1B65ACE047233AFEFC /* DuplicatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3A7B3CDE4C5EB5607D59F7 /* DuplicatesView.swift */; };
 		42D6A59DA58FE8880969ABD0 /* MemorySampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EB67226C04C7D6AC30D77F /* MemorySampler.swift */; };
 		4536137B08AEA61DCCB0C8EB /* AppRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED60D2346358433DEBA2617C /* AppRows.swift */; };
+		480C2CB0C361FA9EB7A58602 /* Responsiveness.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBEE72468EF7431BEE68388D /* Responsiveness.swift */; };
 		4B4827B9EF78526FECC19914 /* PhotoLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FE7033E28772769C7A2C68 /* PhotoLibrary.swift */; };
 		4C9283E5577BF1B798F56355 /* MaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B135D7BABCFE634CE843D8F /* MaintenanceView.swift */; };
 		51066FC294C962160ECF4BBE /* SystemAddOns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC86BCFF2A0915FADFAA96F /* SystemAddOns.swift */; };
@@ -209,6 +210,7 @@
 		B434070E8A07803D25481439 /* UpdateInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateInstaller.swift; sourceTree = "<group>"; };
 		B637BD612951A65AA72AB80F /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B6B49C444C4BD1833DEC2F03 /* ProcessSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessSampler.swift; sourceTree = "<group>"; };
+		BBEE72468EF7431BEE68388D /* Responsiveness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Responsiveness.swift; sourceTree = "<group>"; };
 		BE72F07628736EC3E98A4E4F /* HistoryRangePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryRangePicker.swift; sourceTree = "<group>"; };
 		C046393296410F30F8EC5314 /* DiskInsights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskInsights.swift; sourceTree = "<group>"; };
 		C78E91AC9F3F540E9326E4E9 /* JunkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JunkView.swift; sourceTree = "<group>"; };
@@ -402,6 +404,7 @@
 			children = (
 				537F5D80939C6C8E5DCEF349 /* AppInsights.swift */,
 				6E59F4DDF7C0F78ECCFCB81F /* ProcessGlossary.swift */,
+				BBEE72468EF7431BEE68388D /* Responsiveness.swift */,
 			);
 			path = Apps;
 			sourceTree = "<group>";
@@ -737,6 +740,7 @@
 				9EA8058B605DDFB402D4526B /* ProcessSampler.swift in Sources */,
 				1808D569A62AD050E70829F8 /* ProtectionModel.swift in Sources */,
 				980976C65BBF60B0BFF821CB /* ProtectionView.swift in Sources */,
+				480C2CB0C361FA9EB7A58602 /* Responsiveness.swift in Sources */,
 				EFFB92C610BA4C9A0BD2F115 /* ScreenshotsModel.swift in Sources */,
 				F1039D3A52CF8F580C7659C7 /* ScreenshotsView.swift in Sources */,
 				160F311C5B762A012185425A /* SectionGuide.swift in Sources */,

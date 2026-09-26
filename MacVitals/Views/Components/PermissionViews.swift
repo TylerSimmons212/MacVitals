@@ -9,6 +9,7 @@ extension PermissionKind {
         case .finder: .indigo
         case .photos: .pink
         case .notifications: .red
+        case .accessibility: .purple
         }
     }
 }

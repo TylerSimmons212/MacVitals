@@ -35,6 +35,7 @@ final class Permissions {
         statuses[.finder] = .unknown
         statuses[.photos] = Self.photosStatus()
         statuses[.notifications] = .unknown
+        statuses[.accessibility] = AXIsProcessTrusted() ? .granted : .notDetermined
         refreshNotifications()
         refreshFinder()
         activationObserver = NotificationCenter.default.addObserver(
@@ -68,6 +69,7 @@ final class Permissions {
         case .finder: refreshFinder()
         case .photos: set(.photos, Self.photosStatus())
         case .notifications: refreshNotifications()
+        case .accessibility: set(.accessibility, AXIsProcessTrusted() ? .granted : .notDetermined)
         }
     }
 
@@ -173,6 +175,10 @@ final class Permissions {
 
         switch kind {
         case .fullDiskAccess, .appManagement:
+            sendToSettings(kind, showHelper: true)
+        case .accessibility:
+            // Adds Mac Vitals to the list (switched off) and opens the pane; the helper explains.
+            _ = AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary)
             sendToSettings(kind, showHelper: true)
         case .location:
             if CLLocationManager.locationServicesEnabled(), location.status == .notDetermined {
@@ -311,8 +317,8 @@ final class Permissions {
         closeHelper()
         helperState.kind = kind
         helperState.granted = false
-        // Only Full Disk Access can be detected; App Management gets a "Done" button.
-        helperState.detectsAutomatically = kind == .fullDiskAccess
+        // App Management can't be detected, so it gets a "Done" button; the others are watched.
+        helperState.detectsAutomatically = kind != .appManagement
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 380, height: 150),
             styleMask: [.nonactivatingPanel, .titled, .fullSizeContentView, .closable],

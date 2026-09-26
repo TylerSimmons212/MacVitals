@@ -112,6 +112,7 @@ final class SystemMonitor {
         guard loop == nil else { return }
         loop = Task { [weak self] in
             guard let sampler = self?.sampler else { return }
+            Responsiveness.shared.start { [weak self] in self?.isBeingWatched ?? false }
             // Prime the delta-based samplers, then publish quickly so the UI isn't empty.
             _ = await sampler.sample(includeProcesses: true)
             try? await Task.sleep(for: .milliseconds(800))
@@ -183,7 +184,8 @@ final class SystemMonitor {
             disk: snapshot.disk,
             battery: snapshot.battery,
             thermal: snapshot.thermal,
-            uptime: info.uptime
+            uptime: info.uptime,
+            frozenApps: Responsiveness.shared.frozen
         ))
 
         if let apps = snapshot.apps { trends.record(apps, at: snapshot.date) }

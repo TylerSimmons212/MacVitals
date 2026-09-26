@@ -10,6 +10,9 @@ struct AppsView: View {
     @State private var sort: SortKey = .impact
     @AppStorage("appsShowDetailed") private var showDetailed = false
     @State private var pendingQuit: PendingQuit?
+    @State private var pendingForceQuit: FrozenApp?
+    @Environment(Permissions.self) private var permissions
+    private var responsiveness: Responsiveness { Responsiveness.shared }
 
     enum Filter: String, CaseIterable, Identifiable {
         case apps, background, system, all
@@ -54,10 +57,17 @@ struct AppsView: View {
         SectionScroll {
             verdict(roles: roles).entrance()
             stats(roles: roles).entrance(delay: 0.04)
+            if !responsiveness.frozen.isEmpty {
+                frozenCard.entrance(delay: 0.05)
+            }
             if !flaggedApps.isEmpty {
                 needsAttention.entrance(delay: 0.06)
             }
             listCard(roles: roles).entrance(delay: 0.1)
+            if !permissions.isGranted(.accessibility) {
+                PermissionCallout(kind: .accessibility,
+                                  message: "Allow Accessibility and Mac Vitals will spot apps that freeze (the spinning cursor), even in the background, so you can force quit them.")
+            }
         }
         .searchable(text: $search, placement: .toolbar, prompt: "Search apps & processes")
         .confirmationDialog(
@@ -191,6 +201,35 @@ struct AppsView: View {
                        caption: heaviest.map { AppInsights.impact(score: score($0)).label } ?? "")
         }
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    // MARK: Not responding
+
+    private var frozenCard: some View {
+        Card("Not responding", systemImage: "hourglass", tint: .red) {
+            VStack(spacing: 12) {
+                ForEach(responsiveness.frozen) { app in
+                    HStack(alignment: .top, spacing: 12) {
+                        AppIconView(bundlePath: app.bundlePath, kind: .application, size: 28)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(app.name).font(.body.weight(.semibold))
+                            Text("Hasn't answered for \(app.seconds()) seconds (the spinning cursor). It may recover; if not, force quit it. Unsaved changes in it will be lost.")
+                                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer()
+                        Button("Force Quit") { pendingForceQuit = app }
+                            .buttonStyle(.glassProminent).tint(.red).pointerStyle(.link)
+                    }
+                }
+            }
+        }
+        .confirmationDialog(pendingForceQuit.map { "Force quit \($0.name)?" } ?? "",
+                            isPresented: Binding(get: { pendingForceQuit != nil }, set: { if !$0 { pendingForceQuit = nil } }),
+                            presenting: pendingForceQuit) { app in
+            Button("Force Quit", role: .destructive) { responsiveness.forceQuit(app) }
+        } message: { _ in
+            Text("Anything unsaved in it will be lost.")
+        }
     }
 
     // MARK: Needs attention

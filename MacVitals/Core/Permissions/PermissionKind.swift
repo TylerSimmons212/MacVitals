@@ -9,6 +9,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
     case finder
     case photos
     case notifications
+    case accessibility
 
     var id: String { rawValue }
 
@@ -21,6 +22,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .finder: "Automation › Finder"
         case .photos: "Photos"
         case .notifications: "Notifications"
+        case .accessibility: "Accessibility"
         }
     }
 
@@ -33,6 +35,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .finder: "Remove items installed for all users"
         case .photos: "Clean up screenshots and similar photos"
         case .notifications: "Tell you when something needs attention"
+        case .accessibility: "Spot apps that stop responding"
         }
     }
 
@@ -44,6 +47,8 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
             "macOS counts Wi-Fi network names as location data. Mac Vitals only shows the name on the Network page and never looks up where you are."
         case .appManagement:
             "macOS asks before one app deletes another. This lets the Uninstaller move apps to the Trash."
+        case .accessibility:
+            "Lets Mac Vitals notice when an app freezes (the spinning cursor), even in the background, so you can force quit it. It only checks whether each app answers."
         case .notifications:
             "A heads-up when your disk is nearly full, an app is stuck, or a protection gets switched off, even with the window closed. Only things worth interrupting you for; choose which in Settings."
         case .photos:
@@ -62,6 +67,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .finder: ["Uninstaller and Startup Items: protected apps and helpers"]
         case .photos: ["Screenshots in your library", "Similar photos in your library"]
         case .notifications: ["Alerts for disk, memory, heat, stuck apps, protections and updates"]
+        case .accessibility: ["Apps page and menu bar: frozen apps, with Force Quit"]
         }
     }
 
@@ -73,6 +79,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .finder: "Finder is only asked to move items you choose."
         case .photos: "Photos are analyzed on this Mac and never leave it."
         case .notifications: "Never more than a few an hour, and never while you're looking at Mac Vitals."
+        case .accessibility: "Mac Vitals never reads what's on screen or what you type; it only asks each app for its name."
         }
     }
 
@@ -84,6 +91,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .finder: "folder.fill.badge.person.crop"
         case .photos: "photo.on.rectangle.angled"
         case .notifications: "bell.badge.fill"
+        case .accessibility: "hourglass"
         }
     }
 
@@ -94,7 +102,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
 
     var grantStyle: GrantStyle {
         switch self {
-        case .fullDiskAccess, .appManagement: .settingsList
+        case .fullDiskAccess, .appManagement, .accessibility: .settingsList
         case .location, .finder, .photos, .notifications: .systemPrompt
         }
     }
@@ -111,6 +119,7 @@ enum PermissionKind: String, CaseIterable, Identifiable, Sendable {
         case .finder: "Privacy_Automation"
         case .photos: "Privacy_Photos"
         case .notifications: ""
+        case .accessibility: "Privacy_Accessibility"
         }
         return URL(string: "x-apple.systempreferences:com.apple.preference.security?\(anchor)")!
     }
