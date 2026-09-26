@@ -28,6 +28,7 @@
 		42BEEE1B65ACE047233AFEFC /* DuplicatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3A7B3CDE4C5EB5607D59F7 /* DuplicatesView.swift */; };
 		42D6A59DA58FE8880969ABD0 /* MemorySampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EB67226C04C7D6AC30D77F /* MemorySampler.swift */; };
 		4536137B08AEA61DCCB0C8EB /* AppRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED60D2346358433DEBA2617C /* AppRows.swift */; };
+		4B4827B9EF78526FECC19914 /* PhotoLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FE7033E28772769C7A2C68 /* PhotoLibrary.swift */; };
 		530ADEBDC8D8B4155FE9A40C /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778C875D6756CA4129A0AE03 /* WelcomeView.swift */; };
 		5472C11FA5912B2DCF501EF3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B637BD612951A65AA72AB80F /* SettingsView.swift */; };
 		54A65F4B4754AEE2FFD056B9 /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68DBBE37D0A1D914C57041D4 /* Formatters.swift */; };
@@ -45,6 +46,7 @@
 		7690D8E214589907E7A6A027 /* TileVisuals.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF1AE53D260B13BD78A4CAA7 /* TileVisuals.swift */; };
 		771FB7E07AF748C13D8131D2 /* ProcessController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F44F92C543157832C1F1919 /* ProcessController.swift */; };
 		7A62A2337D53CA7A824FAD79 /* StorageScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A04906A34819987090996C /* StorageScanner.swift */; };
+		7C69380C8CA0ABAF45FB231F /* SimilarPhotosModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933997A789362E9A67946D71 /* SimilarPhotosModel.swift */; };
 		7F636CFF96F605BC98F171D2 /* Glass.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5C291D5B70567BCD96BC88 /* Glass.swift */; };
 		84E8B85958B974380BB14B15 /* MacVitalsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FE039D7C1CBB8F9063BA37B /* MacVitalsTests.swift */; };
 		85676FCC4EB0D765840032F3 /* HistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7581304289FEC08AE1C32388 /* HistoryStore.swift */; };
@@ -59,6 +61,7 @@
 		9D9B54FFB0F4486B9C4F40EA /* StartupModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E5158E7738C563C41A40D5 /* StartupModel.swift */; };
 		9EA8058B605DDFB402D4526B /* ProcessSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B49C444C4BD1833DEC2F03 /* ProcessSampler.swift */; };
 		A789BC0D4B9F04FCE3C8E91E /* DuplicatesModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AF40B6A48B5D3A580CADC5 /* DuplicatesModel.swift */; };
+		A829B56BBB4F0F47E6EC5C57 /* SimilarPhotosSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F5AF76BE814AFD8090F3A9 /* SimilarPhotosSection.swift */; };
 		AC77BEA9FCE32811DF38111E /* AppInventory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9041706D0ACB65C799EDCCE /* AppInventory.swift */; };
 		ACA05D5E3B89C033F028986E /* DiskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C8575E5A6D67850287CBBE3 /* DiskView.swift */; };
 		ADBAAF5752E66C3FCC761F1B /* NetworkInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A3DB5503F950F100F1924A /* NetworkInsights.swift */; };
@@ -91,10 +94,13 @@
 		EB6483D7BC35391CCFFB1E8A /* LayerGauges.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4114E46DEF820C66732A3E9 /* LayerGauges.swift */; };
 		EC9C05DA9ED6D4E18507FB61 /* FinderRemover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DF8D3EA14F9381EA010924 /* FinderRemover.swift */; };
 		EFA583B4B9F249C71413FAEF /* LayerRollingText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23A6D2A09D70BE321D085547 /* LayerRollingText.swift */; };
+		EFFB92C610BA4C9A0BD2F115 /* ScreenshotsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED25EB13F3A9622506B35C1 /* ScreenshotsModel.swift */; };
+		F1039D3A52CF8F580C7659C7 /* ScreenshotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D3DA2B495B48BE75FB259B /* ScreenshotsView.swift */; };
 		FC38BC7D45A63EFE3EDA737B /* MenuBarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01EE11581B067D3C79FF1758 /* MenuBarViews.swift */; };
 		FCC8E242C9AEFFBBF8BDE253 /* BatteryInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264B5B14C9CE7780F454DC66 /* BatteryInsights.swift */; };
 		FDAD5EBD53319E9BB03EEE0F /* NetworkSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25EC9AC95E6E87EC7F1B48D3 /* NetworkSampler.swift */; };
 		FEFC99509EAC912126C4F0ED /* Sunburst.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6F0D16D5FA33F1F4F37A4A /* Sunburst.swift */; };
+		FF34CDB2EF8702841C48AB68 /* SimilarPhotos.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F4C9866E164E08E2CDEB6C /* SimilarPhotos.swift */; };
 		FF50F17D3D4CB06019693ECB /* CleanupHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9A4D6225C64A97C94F6FDA /* CleanupHistory.swift */; };
 /* End PBXBuildFile section */
 
@@ -112,6 +118,7 @@
 		01EE11581B067D3C79FF1758 /* MenuBarViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarViews.swift; sourceTree = "<group>"; };
 		02CF83170FD9742CECF04184 /* MacVitals.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacVitals.entitlements; sourceTree = "<group>"; };
 		042446A5B48593E7FB41964D /* Health.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Health.swift; sourceTree = "<group>"; };
+		04FE7033E28772769C7A2C68 /* PhotoLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibrary.swift; sourceTree = "<group>"; };
 		0DF9F032D8F3A60407B7BE21 /* StorageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageModel.swift; sourceTree = "<group>"; };
 		11EB67226C04C7D6AC30D77F /* MemorySampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemorySampler.swift; sourceTree = "<group>"; };
 		1AB14DA5F5792B08B3A946FE /* MacVitals.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacVitals.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -152,18 +159,22 @@
 		776F82B4DAE59A2C8716CFAE /* SystemMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitor.swift; sourceTree = "<group>"; };
 		778C875D6756CA4129A0AE03 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		78AF40B6A48B5D3A580CADC5 /* DuplicatesModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicatesModel.swift; sourceTree = "<group>"; };
+		78F5AF76BE814AFD8090F3A9 /* SimilarPhotosSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimilarPhotosSection.swift; sourceTree = "<group>"; };
 		7B780A74948EE977C9871F8F /* MacVitalsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacVitalsApp.swift; sourceTree = "<group>"; };
 		8C8575E5A6D67850287CBBE3 /* DiskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskView.swift; sourceTree = "<group>"; };
 		8F96A44B59665A2FA983217B /* Appcast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appcast.swift; sourceTree = "<group>"; };
+		933997A789362E9A67946D71 /* SimilarPhotosModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimilarPhotosModel.swift; sourceTree = "<group>"; };
 		983CE8DDFC777FB456D36ECE /* SmartCleanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCleanView.swift; sourceTree = "<group>"; };
 		9BC18A957FE1E4A771224A4A /* NetworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkView.swift; sourceTree = "<group>"; };
 		9DF5BB3CC134483228C3DB62 /* SpaceLensModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceLensModel.swift; sourceTree = "<group>"; };
 		9E2533237CA5B09950A4E619 /* SpaceLensView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceLensView.swift; sourceTree = "<group>"; };
 		9E7147B1DCFCEDD8DB77B723 /* AppActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActivity.swift; sourceTree = "<group>"; };
+		9ED25EB13F3A9622506B35C1 /* ScreenshotsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotsModel.swift; sourceTree = "<group>"; };
 		9F44F92C543157832C1F1919 /* ProcessController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessController.swift; sourceTree = "<group>"; };
 		A140D2921DCD646657BEA655 /* DefenceChecks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefenceChecks.swift; sourceTree = "<group>"; };
 		A14884DFE580E8A04AA510DD /* BatteryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryView.swift; sourceTree = "<group>"; };
 		A2A9E20BB6B9B5F0AECCA271 /* Charts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Charts.swift; sourceTree = "<group>"; };
+		A6D3DA2B495B48BE75FB259B /* ScreenshotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotsView.swift; sourceTree = "<group>"; };
 		A8186F332485B00C351F1314 /* SectionGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionGuide.swift; sourceTree = "<group>"; };
 		A9CD4A767EE38D03AA21DFA1 /* Permissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Permissions.swift; sourceTree = "<group>"; };
 		AB5C291D5B70567BCD96BC88 /* Glass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Glass.swift; sourceTree = "<group>"; };
@@ -199,6 +210,7 @@
 		EF1AE53D260B13BD78A4CAA7 /* TileVisuals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileVisuals.swift; sourceTree = "<group>"; };
 		F46D9F8B0198C22AEBB6F352 /* StartupItemsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupItemsView.swift; sourceTree = "<group>"; };
 		F7A04906A34819987090996C /* StorageScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageScanner.swift; sourceTree = "<group>"; };
+		F7F4C9866E164E08E2CDEB6C /* SimilarPhotos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimilarPhotos.swift; sourceTree = "<group>"; };
 		FCC7CB1A38EA9C68D75CFB1B /* MetricHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricHistory.swift; sourceTree = "<group>"; };
 		FE47FA233D070FBC38B16C9D /* UninstallerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallerModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -321,6 +333,10 @@
 			children = (
 				625288D4FB50FD2C14033ABE /* DuplicateScanner.swift */,
 				78AF40B6A48B5D3A580CADC5 /* DuplicatesModel.swift */,
+				04FE7033E28772769C7A2C68 /* PhotoLibrary.swift */,
+				9ED25EB13F3A9622506B35C1 /* ScreenshotsModel.swift */,
+				F7F4C9866E164E08E2CDEB6C /* SimilarPhotos.swift */,
+				933997A789362E9A67946D71 /* SimilarPhotosModel.swift */,
 			);
 			path = Duplicates;
 			sourceTree = "<group>";
@@ -453,6 +469,8 @@
 				3199364279CB5A47893302BE /* OverviewView.swift */,
 				D289C9BA25AABED51BFFD119 /* PortsView.swift */,
 				446E370302EA59A8B2D6371F /* ProtectionView.swift */,
+				A6D3DA2B495B48BE75FB259B /* ScreenshotsView.swift */,
+				78F5AF76BE814AFD8090F3A9 /* SimilarPhotosSection.swift */,
 				983CE8DDFC777FB456D36ECE /* SmartCleanView.swift */,
 				9E2533237CA5B09950A4E619 /* SpaceLensView.swift */,
 				F46D9F8B0198C22AEBB6F352 /* StartupItemsView.swift */,
@@ -619,6 +637,7 @@
 				D09F76AF55A2EDF8BDC200DE /* PermissionViews.swift in Sources */,
 				D385DED7AE7370E9F15D16EB /* Permissions.swift in Sources */,
 				90BE225FCFEBA54CCC7B1CD6 /* PersistenceAudit.swift in Sources */,
+				4B4827B9EF78526FECC19914 /* PhotoLibrary.swift in Sources */,
 				E0B99753ABD401D38284157E /* PortScanner.swift in Sources */,
 				6C949CDB40F053E030E24FC7 /* PortsView.swift in Sources */,
 				771FB7E07AF748C13D8131D2 /* ProcessController.swift in Sources */,
@@ -626,9 +645,14 @@
 				9EA8058B605DDFB402D4526B /* ProcessSampler.swift in Sources */,
 				1808D569A62AD050E70829F8 /* ProtectionModel.swift in Sources */,
 				980976C65BBF60B0BFF821CB /* ProtectionView.swift in Sources */,
+				EFFB92C610BA4C9A0BD2F115 /* ScreenshotsModel.swift in Sources */,
+				F1039D3A52CF8F580C7659C7 /* ScreenshotsView.swift in Sources */,
 				160F311C5B762A012185425A /* SectionGuide.swift in Sources */,
 				6AB28DB202CE1F4635C78CA6 /* ServerInsights.swift in Sources */,
 				5472C11FA5912B2DCF501EF3 /* SettingsView.swift in Sources */,
+				FF34CDB2EF8702841C48AB68 /* SimilarPhotos.swift in Sources */,
+				7C69380C8CA0ABAF45FB231F /* SimilarPhotosModel.swift in Sources */,
+				A829B56BBB4F0F47E6EC5C57 /* SimilarPhotosSection.swift in Sources */,
 				C45315FB99312CF92CDC0DB7 /* SmartCleanView.swift in Sources */,
 				92D69DAD40E68F78BD9885F8 /* SpaceLensModel.swift in Sources */,
 				8A03E639589E774763A0D6A1 /* SpaceLensView.swift in Sources */,
@@ -684,6 +708,7 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Tyler Simmons";
 				INFOPLIST_KEY_NSLocationUsageDescription = "macOS treats your Wi-Fi network's name as location data. Mac Vitals uses it only to show which network you're on. It never looks up where you are, and nothing leaves your Mac.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "macOS treats your Wi-Fi network's name as location data. Mac Vitals uses it only to show which network you're on. It never looks up where you are, and nothing leaves your Mac.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Mac Vitals finds screenshots and near-identical photos in your library so you can clean them up. Photos are analyzed on this Mac and never leave it. Photos asks you to confirm anything deleted.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -794,6 +819,7 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Tyler Simmons";
 				INFOPLIST_KEY_NSLocationUsageDescription = "macOS treats your Wi-Fi network's name as location data. Mac Vitals uses it only to show which network you're on. It never looks up where you are, and nothing leaves your Mac.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "macOS treats your Wi-Fi network's name as location data. Mac Vitals uses it only to show which network you're on. It never looks up where you are, and nothing leaves your Mac.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Mac Vitals finds screenshots and near-identical photos in your library so you can clean them up. Photos are analyzed on this Mac and never leave it. Photos asks you to confirm anything deleted.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

@@ -10,6 +10,7 @@ struct DuplicatesView: View {
     @Environment(Permissions.self) private var permissions
     @State private var confirming = false
     @State private var shown = 60
+    @AppStorage("duplicates.mode") private var similarMode = false
 
     var body: some View {
         SectionScroll {
@@ -17,6 +18,27 @@ struct DuplicatesView: View {
                 CleanupResultBanner(record: record)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
+            Picker("Find", selection: $similarMode) {
+                Text("Identical Files").tag(false)
+                Text("Similar Photos").tag(true)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .pointerStyle(.link)
+            .frame(maxWidth: .infinity)
+            if similarMode {
+                SimilarPhotosSection()
+            } else {
+                identical
+            }
+        }
+        .animation(.spring(response: 0.5, dampingFraction: 0.85), value: similarMode)
+        .modifier(IdenticalDialogs(model: model, engine: engine, confirming: $confirming))
+    }
+
+    @ViewBuilder
+    private var identical: some View {
             switch model.phase {
             case .idle: setup.entrance()
             case .scanning: scanning.transition(.opacity)
@@ -28,7 +50,16 @@ struct DuplicatesView: View {
                 }
                 setup.entrance(delay: 0.1)
             }
-        }
+    }
+}
+
+private struct IdenticalDialogs: ViewModifier {
+    let model: DuplicatesModel
+    let engine: CleanupEngine
+    @Binding var confirming: Bool
+
+    func body(content: Content) -> some View {
+        content
         .animation(.spring(response: 0.5, dampingFraction: 0.85), value: model.phase)
         .animation(.spring(response: 0.5, dampingFraction: 0.82), value: engine.lastRecord?.id)
         .confirmationDialog("Move \(model.selectedFiles.count) duplicate\(model.selectedFiles.count == 1 ? "" : "s") to the Trash?",
@@ -40,6 +71,9 @@ struct DuplicatesView: View {
                  + (iCloud > 0 ? "\n\n\(iCloud) of them \(iCloud == 1 ? "is" : "are") in iCloud Drive, so \(iCloud == 1 ? "it's" : "they're") removed from your other devices too." : ""))
         }
     }
+}
+
+extension DuplicatesView {
 
     // MARK: Summary
 

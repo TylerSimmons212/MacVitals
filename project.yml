@@ -42,6 +42,7 @@ targets:
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "macOS treats your Wi-Fi network's name as location data. Mac Vitals uses it only to show which network you're on. It never looks up where you are, and nothing leaves your Mac."
         # Finder moves items that belong to all users to the Trash (it asks for your password).
         INFOPLIST_KEY_NSAppleEventsUsageDescription: "Mac Vitals asks Finder to move protected items (like apps installed for all users) to the Trash. Finder asks for your password, and nothing is deleted until you empty the Trash."
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Mac Vitals finds screenshots and near-identical photos in your library so you can clean them up. Photos are analyzed on this Mac and never leave it. Photos asks you to confirm anything deleted."
         CODE_SIGN_ENTITLEMENTS: MacVitals/MacVitals.entitlements
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Tyler Simmons"

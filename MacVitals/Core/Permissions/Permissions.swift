@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import Observation
 import CoreLocation
+import Photos
 
 /// Permission handling modeled on the best Mac apps (CleanMyMac, DaisyDisk, Bartender):
 /// explain first, ask in context, take people to the exact setting with a drag-and-drop helper,
@@ -31,6 +32,7 @@ final class Permissions {
         statuses[.appManagement] = Self.appManagementStatus()
         statuses[.location] = location.status
         statuses[.finder] = .unknown
+        statuses[.photos] = Self.photosStatus()
         refreshFinder()
         activationObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
@@ -60,6 +62,7 @@ final class Permissions {
         case .appManagement: set(.appManagement, Self.appManagementStatus())
         case .location: set(.location, location.status)
         case .finder: refreshFinder()
+        case .photos: set(.photos, Self.photosStatus())
         }
     }
 
@@ -112,6 +115,15 @@ final class Permissions {
         Task { @MainActor in Permissions.shared.refresh(.appManagement) }
     }
 
+    nonisolated static func photosStatus() -> PermissionStatus {
+        switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
+        case .authorized, .limited: .granted
+        case .denied, .restricted: .denied
+        case .notDetermined: .notDetermined
+        @unknown default: .unknown
+        }
+    }
+
     /// Whether we may send Finder Apple Events. `ask: true` shows macOS's one-time prompt
     /// (blocks until answered, so never call it on the main thread).
     nonisolated static func finderStatus(ask: Bool) -> PermissionStatus {
@@ -146,6 +158,16 @@ final class Permissions {
                 location.request()
             } else {
                 sendToSettings(kind, showHelper: false)
+            }
+        case .photos:
+            if Self.photosStatus() == .denied {
+                sendToSettings(.photos, showHelper: false)
+            } else {
+                Task { @MainActor in
+                    _ = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+                    self.set(.photos, Self.photosStatus())
+                    if !self.isGranted(.photos) { self.completions[.photos] = nil }
+                }
             }
         case .finder:
             Task.detached(priority: .userInitiated) {
