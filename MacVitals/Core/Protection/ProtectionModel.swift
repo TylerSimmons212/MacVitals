@@ -16,6 +16,8 @@ final class ProtectionModel {
     private(set) var lastCheck: Date?
     /// Whether the startup check covered macOS's complete list (see `BTMAccess`).
     private(set) var startupComplete = StartupInventory.isComplete
+    /// Browser extensions forced on by a policy, or installed outside the store with access to every site.
+    private(set) var suspiciousExtensions: [BrowserExtension] = []
 
     var coreDefences: [DefenceCheck] { defences.filter(\.isCoreDefence) }
     var coreDefencesOn: Int { coreDefences.filter { $0.status == .on }.count }
@@ -25,7 +27,7 @@ final class ProtectionModel {
     var suspiciousCount: Int { startup.filter { $0.level == .suspicious }.count }
 
     /// Things that need action: defences that are off, plus suspicious startup items.
-    var attentionCount: Int { defences.filter(\.status.needsAttention).count + suspiciousCount }
+    var attentionCount: Int { defences.filter(\.status.needsAttention).count + suspiciousCount + suspiciousExtensions.count }
 
     /// Asks for your password once, then re-checks with the complete list.
     func includeEverything() async {
@@ -42,6 +44,7 @@ final class ProtectionModel {
             StartupInventory.scan().map { PersistenceAudit.review($0) }
         }.value
         async let apps = Task.detached(priority: .utility) { AppSignatureAudit.run() }.value
+        async let extensions = Task.detached(priority: .utility) { BrowserExtensions.all().filter { $0.level == .suspicious } }.value
 
         var checks = await fast
         // Keep the last macOS-updates answer while re-checking, instead of flashing back to "Checking".
@@ -53,6 +56,7 @@ final class ProtectionModel {
         let appResult = await apps
         appsChecked = appResult.checked
         unverifiedApps = appResult.unverified
+        suspiciousExtensions = await extensions
         lastCheck = Date()
         phase = .ready
 

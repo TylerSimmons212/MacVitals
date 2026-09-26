@@ -38,6 +38,7 @@ MacVitals/
     Updates/      Sparkle appcasts, App Store lookup, Homebrew, verified installer
     Duplicates/   exact duplicate finder (size → ends → SHA-256), clone-aware space, keep rules;
                   similar photos (Vision), screenshots, PhotoKit access
+    Extensions/   browser extensions (Chromium family, Firefox, Safari) and system add-ons
     Notifications/ alert rules (AlertPolicy: persistence, cooldown, escalation, hourly cap) + delivery
     Ports/        listening-port / dev-server scanner
   Views/

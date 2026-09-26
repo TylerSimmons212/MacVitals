@@ -32,6 +32,7 @@ struct SectionGuide: Sendable {
         case .duplicates: duplicates
         case .screenshots: screenshots
         case .maintenance: maintenance
+        case .extensions: extensions
         case .uninstaller: uninstaller
         case .startup: startup
         case .protection: protection
@@ -439,6 +440,31 @@ struct SectionGuide: Sendable {
             Term(term: "Photos Library", meaning: "Screenshots in Photos, found by the screenshot tag Photos adds."),
             Term(term: "Files", meaning: "Screenshot files anywhere in your home folder, found by the tag macOS adds to every screenshot."),
             Term(term: "Recently Deleted", meaning: "Photos keeps deleted items there for 30 days before removing them for good."),
+        ]
+    )
+
+    static let extensions = SectionGuide(
+        title: "Understanding Extensions",
+        summary: "Add-ons for your browsers and for macOS itself: what's installed, what each can do, and which deserve a second look.",
+        healthy: [
+            "Extensions you added yourself from the browser's store.",
+            "Add-ons that belong to apps you still use, like a VPN's network extension or a meeting app's audio driver.",
+        ],
+        culprits: [
+            "Extensions installed by another program's installer, not from the store.",
+            "Extensions forced on by a policy or configuration profile, which is how adware stops you removing it.",
+            "Audio drivers and plug-ins left behind by apps you deleted.",
+        ],
+        fixes: [
+            "Remove browser extensions in the browser: open its Extensions page, or the extension's store page, which has a Remove button.",
+            "Extensions forced by a profile: remove the profile in System Settings › General › Device Management.",
+            "Leftover add-ons go to the Trash from here. Audio drivers disappear after a restart.",
+        ],
+        glossary: [
+            Term(term: "Forced by policy", meaning: "Installed through a browser policy or configuration profile. The browser won't let you remove it."),
+            Term(term: "Developer mode", meaning: "Loaded from a folder instead of the store, usually by a developer testing their own extension."),
+            Term(term: "System extension", meaning: "Code that runs as part of macOS: VPNs, network filters, drivers. Managed in Login Items & Extensions."),
+            Term(term: "HAL audio driver", meaning: "A virtual sound device that appears in Sound settings."),
         ]
     )
 

@@ -2492,3 +2492,108 @@ struct MaintenanceTests {
         #expect(MaintenanceRunner.parseSnapshotDates("Snapshot dates for disk /:\n").isEmpty)
     }
 }
+
+@Suite("Extensions")
+struct ExtensionTests {
+    @Test func chromeInstallSources() {
+        #expect(BrowserExtensions.source(location: 1, fromStore: true, forcedIDs: [], id: "a") == .store)
+        #expect(BrowserExtensions.source(location: 4, fromStore: false, forcedIDs: [], id: "a") == .developer)
+        #expect(BrowserExtensions.source(location: 9, fromStore: false, forcedIDs: [], id: "a") == .policy)
+        #expect(BrowserExtensions.source(location: 3, fromStore: false, forcedIDs: [], id: "a") == .outsideStore)
+        #expect(BrowserExtensions.source(location: 1, fromStore: true, forcedIDs: ["a"], id: "a") == .policy)
+    }
+
+    @Test func permissionsInPlainWords() {
+        let (access, broad) = BrowserExtensions.accessSummary([
+            "permissions": ["history", "cookies", "storage"],
+            "host_permissions": ["<all_urls>"],
+        ])
+        #expect(broad)
+        #expect(access.first == "Read and change everything on every website")
+        #expect(access.contains("See your browsing history") && access.contains("Read cookies (how sites keep you signed in)"))
+        let (narrow, isBroad) = BrowserExtensions.accessSummary(["content_scripts": [["matches": ["https://example.com/*"]]]])
+        #expect(!isBroad && narrow.isEmpty)
+    }
+
+    @Test func levelsFlagTheAdwarePatterns() {
+        func ext(_ source: BrowserExtension.Source, broad: Bool, enabled: Bool? = true) -> BrowserExtension {
+            BrowserExtension(browser: .chrome, profile: nil, extensionID: "x", name: "X", version: nil, summary: nil,
+                             enabled: enabled, source: source, access: [], hasBroadAccess: broad, path: nil)
+        }
+        #expect(ext(.policy, broad: false).level == .suspicious)
+        #expect(ext(.outsideStore, broad: true).level == .suspicious)
+        #expect(ext(.outsideStore, broad: false).level == .review)
+        #expect(ext(.store, broad: true).level == .info)          // ad blockers, password managers
+        #expect(ext(.store, broad: false, enabled: false).level == .info)
+        #expect(ext(.store, broad: false).level == .fine)
+        #expect(ext(.store, broad: false).storeURL?.absoluteString == "https://chromewebstore.google.com/detail/x")
+    }
+
+    @Test func resolvesLocalizedNames() throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "ext-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder.appending(path: "_locales/en"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try Data(#"{"appName": {"message": "Good Extension"}}"#.utf8).write(to: folder.appending(path: "_locales/en/messages.json"))
+        #expect(BrowserExtensions.localized("__MSG_APPNAME__", folder: folder.path, defaultLocale: "en") == "Good Extension")
+        #expect(BrowserExtensions.localized("Plain", folder: folder.path, defaultLocale: nil) == "Plain")
+    }
+
+    @Test func readsFirefoxAddons() {
+        let json: [String: Any] = ["addons": [
+            ["id": "ublock@example", "type": "extension", "location": "app-profile", "active": true, "signedState": 2,
+             "version": "1.0", "defaultLocale": ["name": "uBlock"], "sourceURI": "https://addons.mozilla.org/x.xpi",
+             "userPermissions": ["origins": ["<all_urls>"], "permissions": ["tabs"]]],
+            ["id": "sneaky@example", "type": "extension", "location": "app-profile", "active": true, "signedState": 0,
+             "defaultLocale": ["name": "Sneaky"]],
+            ["id": "builtin@mozilla", "type": "extension", "location": "app-builtin", "defaultLocale": ["name": "Built-in"]],
+        ]]
+        let found = BrowserExtensions.parseFirefox(json, profile: "default")
+        #expect(found.map(\.name) == ["uBlock", "Sneaky"])
+        #expect(found[0].hasBroadAccess && found[0].source == .store)
+        #expect(found[1].concerns.contains(.unsigned) && found[1].level >= .review)
+    }
+
+    @Test func readsSafariExtensionsFromPluginkit() {
+        let output = """
+             com.kibbewater.YoutubeDislikes.Extension(1.2.3)
+        \t            Path = /Applications/Return Dislikes.app/Contents/PlugIns/Return Dislikes Extension.appex
+        \t    Display Name = ReturnDislikes Extension
+
+         (1 plug-in)
+        """
+        let entries = BrowserExtensions.parsePluginkit(output)
+        #expect(entries.count == 1)
+        #expect(entries[0].bundleID == "com.kibbewater.YoutubeDislikes.Extension" && entries[0].version == "1.2.3")
+        #expect(entries[0].name == "ReturnDislikes Extension")
+        #expect(entries[0].appName == "Return Dislikes")
+    }
+
+    @Test func readsSystemExtensions() {
+        let output = """
+        2 extension(s)
+        --- com.apple.system_extension.network_extension (Go to 'System Settings > General > Login Items & Extensions > Network Extensions' to modify these system extension(s))
+        enabled\tactive\tteamID\tbundleID (version)\tname\t[state]
+        *\t*\tS8EX82NJP6\tcom.macpaw.clearvpn.macos-site-ver.system-network-extension (2.1.2/202304.26.1112)\tSystemExtension-Site-Version\t[activated enabled]
+        \t\tYHUG37CKN8\tcom.surfshark.old (4.0/1)\tSurfshark\t[terminated waiting to uninstall on reboot]
+        """
+        let entries = SystemAddOns.parseSystemExtensions(output)
+        #expect(entries.count == 1) // the one waiting to uninstall is already on its way out
+        #expect(entries[0].category == "Network extension" && entries[0].teamID == "S8EX82NJP6")
+        #expect(entries[0].bundleID == "com.macpaw.clearvpn.macos-site-ver.system-network-extension")
+        #expect(entries[0].version == "2.1.2" && entries[0].enabled)
+    }
+
+    @Test func findsEachAddOnsRealApp() {
+        var owners = SystemAddOns.Owners()
+        owners.byTeam = ["S8EX82NJP6": "CleanMyMac", "UBF8T346G9": "Visual Studio Code"]
+        owners.bundleIDs = [("com.macpaw.cleanmymac5", "CleanMyMac"), ("com.microsoft.teams2", "Microsoft Teams"),
+                            ("com.microsoft.vscode", "Visual Studio Code")]
+        // Same product name inside the ID.
+        #expect(owners.owner(bundleID: "com.microsoft.MSTeamsAudioDevice", name: "MSTeamsAudioDevice") == "Microsoft Teams")
+        // Same developer, different product: not its app.
+        #expect(owners.owner(bundleID: "com.macpaw.clearvpn.macos-site-ver.system-network-extension", name: "SystemExtension-Site-Version") == nil)
+        #expect(owners.sameDeveloper(teamID: "S8EX82NJP6") == "CleanMyMac")
+        // Bundle ID prefix.
+        #expect(owners.owner(bundleID: "com.macpaw.cleanmymac5.helper", name: nil) == "CleanMyMac")
+    }
+}
