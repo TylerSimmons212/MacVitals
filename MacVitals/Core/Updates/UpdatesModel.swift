@@ -44,7 +44,7 @@ final class UpdatesModel {
     var checkedCount: Int { apps.filter { $0.source.isCheckable }.count }
 
     /// Updates Mac Vitals can do in one click (from a developer feed or Homebrew).
-    var oneClick: [UpdatableApp] { available.filter { $0.source.canInstallHere } }
+    var oneClick: [UpdatableApp] { available.filter { $0.source.canInstallHere && $0.bundleID != Bundle.main.bundleIdentifier } }
 
     private func isDone(_ app: UpdatableApp) -> Bool {
         if case .done = installs[app.path] { return true }
@@ -92,6 +92,11 @@ final class UpdatesModel {
     // MARK: Updating
 
     func update(_ app: UpdatableApp) async {
+        // Mac Vitals itself: Sparkle does it (it can quit and relaunch us safely).
+        if app.bundleID == Bundle.main.bundleIdentifier {
+            AppUpdater.shared.checkForUpdates()
+            return
+        }
         guard let check = checks[app.path] else { return }
         switch app.source {
         case .appStore:
