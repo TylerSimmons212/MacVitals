@@ -8,6 +8,7 @@ extension PermissionKind {
         case .appManagement: .blue
         case .finder: .indigo
         case .photos: .pink
+        case .notifications: .red
         }
     }
 }

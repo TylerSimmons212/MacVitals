@@ -70,6 +70,7 @@
 		B5A5FD8EB139CDF34E85639A /* ProcessGlossary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E59F4DDF7C0F78ECCFCB81F /* ProcessGlossary.swift */; };
 		BA2798B7141F51AE5907AE6E /* MetricHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC7CB1A38EA9C68D75CFB1B /* MetricHistory.swift */; };
 		BFE7678792C82DB89C1C2637 /* SpaceScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 600C8C53027A5089686E8567 /* SpaceScanner.swift */; };
+		C1E774D069123AA1D17E1A00 /* Alerts.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42A94055F022E5D7F933F9C /* Alerts.swift */; };
 		C45315FB99312CF92CDC0DB7 /* SmartCleanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 983CE8DDFC777FB456D36ECE /* SmartCleanView.swift */; };
 		C8557E0FAFCC45EFF42AC718 /* CleanupComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 699B3B6B92B8944FE63882BD /* CleanupComponents.swift */; };
 		CA741611A8E42ACDD13C311D /* MacVitalsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B780A74948EE977C9871F8F /* MacVitalsApp.swift */; };
@@ -90,6 +91,7 @@
 		E0B99753ABD401D38284157E /* PortScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3860DFF9CC637F351B52EE8 /* PortScanner.swift */; };
 		E31EA3F0624123447EB11907 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D2A749E0479B89295D92A656 /* Assets.xcassets */; };
 		E3AEB8A8CE7512D80880442C /* DetailComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E1EF2C68F502A30DDE5E35 /* DetailComponents.swift */; };
+		EA6CDA6312F071EB47417D20 /* AlertCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCD14E642A3923E46FA9761 /* AlertCenter.swift */; };
 		EAAE98067729EB295D0FD4BC /* DockIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9E60886C850E1E5503AC893 /* DockIcon.swift */; };
 		EB6483D7BC35391CCFFB1E8A /* LayerGauges.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4114E46DEF820C66732A3E9 /* LayerGauges.swift */; };
 		EC9C05DA9ED6D4E18507FB61 /* FinderRemover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DF8D3EA14F9381EA010924 /* FinderRemover.swift */; };
@@ -162,6 +164,7 @@
 		78F5AF76BE814AFD8090F3A9 /* SimilarPhotosSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimilarPhotosSection.swift; sourceTree = "<group>"; };
 		7B780A74948EE977C9871F8F /* MacVitalsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacVitalsApp.swift; sourceTree = "<group>"; };
 		8C8575E5A6D67850287CBBE3 /* DiskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskView.swift; sourceTree = "<group>"; };
+		8CCD14E642A3923E46FA9761 /* AlertCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertCenter.swift; sourceTree = "<group>"; };
 		8F96A44B59665A2FA983217B /* Appcast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appcast.swift; sourceTree = "<group>"; };
 		933997A789362E9A67946D71 /* SimilarPhotosModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimilarPhotosModel.swift; sourceTree = "<group>"; };
 		983CE8DDFC777FB456D36ECE /* SmartCleanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCleanView.swift; sourceTree = "<group>"; };
@@ -183,6 +186,7 @@
 		B2C9B78DCAE88182006FC9A2 /* UpdatesModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdatesModel.swift; sourceTree = "<group>"; };
 		B3490FBCC7E7C6588C76FA73 /* NetworkDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkDiagnostics.swift; sourceTree = "<group>"; };
 		B3860DFF9CC637F351B52EE8 /* PortScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortScanner.swift; sourceTree = "<group>"; };
+		B42A94055F022E5D7F933F9C /* Alerts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alerts.swift; sourceTree = "<group>"; };
 		B434070E8A07803D25481439 /* UpdateInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateInstaller.swift; sourceTree = "<group>"; };
 		B637BD612951A65AA72AB80F /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B6B49C444C4BD1833DEC2F03 /* ProcessSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessSampler.swift; sourceTree = "<group>"; };
@@ -243,6 +247,7 @@
 				C5B1BCACADDE03C0AAE8F153 /* Cleanup */,
 				8E27FD0B0DD85C0A5A226DA9 /* Duplicates */,
 				9D6602DF63CEA61567E28A72 /* Network */,
+				DBCD421E0AED99F2C759C75E /* Notifications */,
 				5E1985A699929377C246E623 /* Permissions */,
 				D6348312D0DB35AA28F0D081 /* Ports */,
 				17F7DF137DCFA18A64971858 /* Protection */,
@@ -427,6 +432,15 @@
 			path = Ports;
 			sourceTree = "<group>";
 		};
+		DBCD421E0AED99F2C759C75E /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				8CCD14E642A3923E46FA9761 /* AlertCenter.swift */,
+				B42A94055F022E5D7F933F9C /* Alerts.swift */,
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
 		E89E4F47A74BE5AAC3C16E0D /* MacVitalsTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -582,6 +596,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA6CDA6312F071EB47417D20 /* AlertCenter.swift in Sources */,
+				C1E774D069123AA1D17E1A00 /* Alerts.swift in Sources */,
 				1CE506286C553779543A4068 /* AppActivity.swift in Sources */,
 				5BEDE1501F794E966E80D09F /* AppInsights.swift in Sources */,
 				AC77BEA9FCE32811DF38111E /* AppInventory.swift in Sources */,

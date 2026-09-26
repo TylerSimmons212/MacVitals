@@ -5,6 +5,7 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             Tab("General", systemImage: "gearshape") { GeneralSettings() }
+            Tab("Notifications", systemImage: "bell") { NotificationSettings() }
             Tab("Permissions", systemImage: "hand.raised") { PermissionSettings() }
         }
         .scenePadding()
@@ -90,5 +91,61 @@ private struct GeneralSettings: View {
         }
         .formStyle(.grouped)
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// Which alerts Mac Vitals may send. Everything is rate-limited and nothing is sent while you're
+/// looking at Mac Vitals.
+private struct NotificationSettings: View {
+    @Environment(Permissions.self) private var permissions
+    @State private var enabled: [AlertKind: Bool] = Dictionary(uniqueKeysWithValues: AlertKind.allCases.map { ($0, AlertCenter.isEnabled($0)) })
+    @State private var testSent = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if !permissions.isGranted(.notifications) {
+                PermissionRow(kind: .notifications, compact: true)
+                    .padding(.horizontal, 14)
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.primary.opacity(0.04)))
+            }
+            Text("Only things worth interrupting you for. Each alert waits until a problem lasts (a spike isn't a problem), won't repeat for hours unless it gets worse, and never shows while Mac Vitals is on screen. macOS Focus modes are respected.")
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 0) {
+                ForEach(Array(AlertKind.allCases.enumerated()), id: \.element) { index, kind in
+                    if index > 0 { Divider().padding(.leading, 40) }
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: kind.icon).foregroundStyle(.secondary).frame(width: 22).padding(.top, 2)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(kind.title).font(.body.weight(.medium))
+                            Text(kind.detail).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 8)
+                        Toggle("", isOn: Binding(
+                            get: { enabled[kind] ?? kind.enabledByDefault },
+                            set: { value in
+                                enabled[kind] = value
+                                UserDefaults.standard.set(value, forKey: kind.settingsKey)
+                            }))
+                            .toggleStyle(.switch).labelsHidden().controlSize(.small).pointerStyle(.link)
+                    }
+                    .padding(.vertical, 8)
+                    .opacity(permissions.isGranted(.notifications) ? 1 : 0.5)
+                }
+            }
+            .padding(.horizontal, 14)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color.primary.opacity(0.04)))
+            HStack {
+                Button(testSent ? "Sent" : "Send a Test Notification") {
+                    AlertCenter.shared.sendTest()
+                    testSent = true
+                }
+                .buttonStyle(.link).font(.callout).pointerStyle(.link)
+                .disabled(!permissions.isGranted(.notifications))
+                Spacer()
+                Button("macOS Notification Settings…") { permissions.openSettings(for: .notifications) }
+                    .buttonStyle(.link).font(.callout).pointerStyle(.link)
+            }
+        }
+        .onAppear { permissions.refresh(.notifications) }
     }
 }
