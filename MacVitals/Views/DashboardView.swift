@@ -122,6 +122,7 @@ struct DashboardView: View {
         case .spaceLens: SpaceLensView()
         case .duplicates: DuplicatesView()
         case .screenshots: ScreenshotsView()
+        case .maintenance: MaintenanceView()
         case .uninstaller: UninstallerView()
         case .startup: StartupItemsView()
         }

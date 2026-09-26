@@ -2452,3 +2452,43 @@ struct NotificationTests {
         #expect(digest.first?.title == "2 app updates available")
     }
 }
+
+@Suite("Maintenance")
+struct MaintenanceTests {
+    @Test func everyTaskIsExplainedAndUsesRealTools() {
+        #expect(MaintenanceTask.all.count == MaintenanceTask.ID.allCases.count)
+        for task in MaintenanceTask.all {
+            #expect(!task.symptom.isEmpty && !task.explanation.isEmpty && !task.sideEffect.isEmpty && !task.duration.isEmpty)
+            for command in task.commands {
+                #expect(command[0].hasPrefix("/"))
+                #expect(FileManager.default.isExecutableFile(atPath: command[0]), "\(command[0]) missing")
+            }
+        }
+    }
+
+    @Test func disruptiveTasksAskFirst() {
+        let confirmed = Set(MaintenanceTask.all.filter { $0.confirm != nil }.map(\.id))
+        #expect(confirmed.isSuperset(of: [.spotlight, .openWith, .snapshots]))
+        #expect(MaintenanceTask.leftOut.contains { $0.title.contains("startup disk") })
+        #expect(MaintenanceTask.leftOut.contains { $0.title.contains("RAM") })
+    }
+
+    @Test func passwordCommandsAreQuotedSafely() {
+        let dns = MaintenanceTask.all.first { $0.id == .dnsCache }!
+        #expect(MaintenanceRunner.shellLine(dns) == "'/usr/bin/dscacheutil' '-flushcache'; '/usr/bin/killall' '-HUP' 'mDNSResponder'")
+        #expect(MaintenanceRunner.quote("it's") == #"'it'\''s'"#)
+        #expect(MaintenanceRunner.appleScriptString(#"say "hi" \ there"#) == #""say \"hi\" \\ there""#)
+    }
+
+    @Test func readsLocalSnapshotDates() {
+        let output = """
+        Snapshot dates for disk /:
+        2026-09-25-093012
+        2026-09-25-103015
+        """
+        let stamps = MaintenanceRunner.parseSnapshotDates(output)
+        #expect(stamps == ["2026-09-25-093012", "2026-09-25-103015"])
+        #expect(MaintenanceRunner.snapshotDate(stamps[0]) != nil)
+        #expect(MaintenanceRunner.parseSnapshotDates("Snapshot dates for disk /:\n").isEmpty)
+    }
+}
