@@ -3,6 +3,7 @@ import SwiftUI
 import Observation
 import CoreLocation
 import Photos
+import UserNotifications
 
 /// Permission handling modeled on the best Mac apps (CleanMyMac, DaisyDisk, Bartender):
 /// explain first, ask in context, take people to the exact setting with a drag-and-drop helper,
@@ -33,6 +34,8 @@ final class Permissions {
         statuses[.location] = location.status
         statuses[.finder] = .unknown
         statuses[.photos] = Self.photosStatus()
+        statuses[.notifications] = .unknown
+        refreshNotifications()
         refreshFinder()
         activationObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
@@ -52,7 +55,8 @@ final class Permissions {
     // MARK: Detection
 
     func refreshAll() {
-        for kind in PermissionKind.allCases where kind != .finder { refresh(kind) }
+        for kind in PermissionKind.allCases where kind != .finder && kind != .notifications { refresh(kind) }
+        refreshNotifications()
         refreshFinder()
     }
 
@@ -63,6 +67,23 @@ final class Permissions {
         case .location: set(.location, location.status)
         case .finder: refreshFinder()
         case .photos: set(.photos, Self.photosStatus())
+        case .notifications: refreshNotifications()
+        }
+    }
+
+    private func refreshNotifications() {
+        Task { @MainActor in
+            let settings = await UNUserNotificationCenter.current().notificationSettings()
+            self.set(.notifications, Self.status(settings.authorizationStatus))
+        }
+    }
+
+    nonisolated static func status(_ authorization: UNAuthorizationStatus) -> PermissionStatus {
+        switch authorization {
+        case .authorized, .provisional, .ephemeral: .granted
+        case .denied: .denied
+        case .notDetermined: .notDetermined
+        @unknown default: .unknown
         }
     }
 
@@ -158,6 +179,18 @@ final class Permissions {
                 location.request()
             } else {
                 sendToSettings(kind, showHelper: false)
+            }
+        case .notifications:
+            Task { @MainActor in
+                let settings = await UNUserNotificationCenter.current().notificationSettings()
+                if settings.authorizationStatus == .denied {
+                    self.sendToSettings(.notifications, showHelper: false)
+                    return
+                }
+                _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+                let updated = await UNUserNotificationCenter.current().notificationSettings()
+                self.set(.notifications, Self.status(updated.authorizationStatus))
+                if !self.isGranted(.notifications) { self.completions[.notifications] = nil }
             }
         case .photos:
             if Self.photosStatus() == .denied {

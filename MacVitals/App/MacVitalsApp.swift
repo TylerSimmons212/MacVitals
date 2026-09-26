@@ -5,14 +5,14 @@ import AppKit
 struct MacVitalsApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var monitor: SystemMonitor
-    @State private var router = Router()
+    @State private var router: Router
     @State private var cleanup = CleanupEngine()
     @State private var uninstaller = UninstallerModel()
     @State private var startup = StartupModel()
     @State private var storage = StorageModel()
     @State private var protection = ProtectionModel()
     @State private var spaceLens = SpaceLensModel()
-    @State private var updates = UpdatesModel()
+    @State private var updates: UpdatesModel
     @State private var duplicates = DuplicatesModel()
     @State private var screenshots = ScreenshotsModel()
     @State private var similarPhotos = SimilarPhotosModel()
@@ -25,6 +25,16 @@ struct MacVitalsApp: App {
         _monitor = State(initialValue: monitor)
         AppDelegate.monitor = monitor
         AppActivity.shared.start()
+        let router = Router()
+        let updates = UpdatesModel()
+        _router = State(initialValue: router)
+        _updates = State(initialValue: updates)
+        // Clicking a notification opens the dashboard on the relevant page.
+        AlertCenter.shared.openSection = { section in
+            router.section = section
+            NotificationCenter.default.post(name: .openDashboard, object: nil)
+        }
+        AlertCenter.shared.configure(updates: updates)
         let showDashboard = UserDefaults.standard.object(forKey: SettingsKeys.showDashboardAtLaunch) as? Bool ?? true
         dashboardLaunchBehavior = showDashboard ? .presented : .suppressed
     }

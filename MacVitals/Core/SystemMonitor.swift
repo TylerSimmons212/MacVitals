@@ -188,6 +188,11 @@ final class SystemMonitor {
 
         if let apps = snapshot.apps { trends.record(apps, at: snapshot.date) }
 
+        // Notifications keep working with every window closed (throttled inside to every 30 s).
+        let trends = self.trends
+        AlertCenter.shared.observe(report: report, flags: trends.flags(now: snapshot.date),
+                                   apps: snapshot.apps, userIsLooking: isBeingWatched)
+
         // The menu bar badge is the only thing that must stay live in the background.
         let newAttention = Attention(report)
         if newAttention != attention { attention = newAttention }

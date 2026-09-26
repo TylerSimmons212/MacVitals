@@ -1717,7 +1717,9 @@ struct PermissionTests {
     @Test func everyPermissionIsExplained() {
         for kind in PermissionKind.allCases {
             #expect(!kind.benefit.isEmpty && !kind.explanation.isEmpty && !kind.unlocks.isEmpty && !kind.privacyNote.isEmpty)
-            #expect(kind.settingsURL.absoluteString.hasPrefix("x-apple.systempreferences:com.apple.preference.security?Privacy_"))
+            #expect(kind.settingsURL.absoluteString.hasPrefix(kind == .notifications
+                ? "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id="
+                : "x-apple.systempreferences:com.apple.preference.security?Privacy_"))
         }
         #expect(PermissionKind.allCases.filter(\.isRecommended) == [.fullDiskAccess])
     }
@@ -2356,5 +2358,95 @@ struct SimilarPhotoTests {
         #expect(model.isReviewFinished)
         #expect(model.selected.count == 2)
         #expect(!model.isSelected(model.reviewList[2]))
+    }
+}
+
+
+@Suite("Notifications")
+struct NotificationTests {
+    private func alert(_ id: String, severity: Int = 1, persistence: TimeInterval = 0, cooldown: TimeInterval = 3600) -> Alert {
+        Alert(id: id, kind: .storage, severity: severity, title: id, body: "", section: .disk, persistence: persistence, cooldown: cooldown)
+    }
+
+    private let t0 = Date(timeIntervalSince1970: 1_000_000)
+
+    @Test func waitsUntilAProblemLasts() {
+        var policy = AlertPolicy()
+        let memory = alert("memory", persistence: 180)
+        #expect(policy.evaluate([memory], now: t0, userIsLooking: false).isEmpty)
+        #expect(policy.evaluate([memory], now: t0.addingTimeInterval(120), userIsLooking: false).isEmpty)
+        #expect(policy.evaluate([memory], now: t0.addingTimeInterval(181), userIsLooking: false).map(\.id) == ["memory"])
+        // A dip resets the clock: it must last again before a new alert (after the cooldown).
+        _ = policy.evaluate([], now: t0.addingTimeInterval(200), userIsLooking: false)
+        #expect(policy.evaluate([memory], now: t0.addingTimeInterval(4000), userIsLooking: false).isEmpty)
+        #expect(policy.evaluate([memory], now: t0.addingTimeInterval(4200), userIsLooking: false).map(\.id) == ["memory"])
+    }
+
+    @Test func coolsDownUnlessItGetsWorse() {
+        var policy = AlertPolicy()
+        #expect(policy.evaluate([alert("disk", severity: 1)], now: t0, userIsLooking: false).count == 1)
+        #expect(policy.evaluate([alert("disk", severity: 1)], now: t0.addingTimeInterval(600), userIsLooking: false).isEmpty)
+        // Worse: say so now.
+        #expect(policy.evaluate([alert("disk", severity: 2)], now: t0.addingTimeInterval(700), userIsLooking: false).count == 1)
+        // After the cooldown, again.
+        #expect(policy.evaluate([alert("disk", severity: 2)], now: t0.addingTimeInterval(700 + 3601), userIsLooking: false).count == 1)
+    }
+
+    @Test func quietWhileYoureLookingAndCappedPerHour() {
+        var policy = AlertPolicy()
+        #expect(policy.evaluate([alert("disk")], now: t0, userIsLooking: true).isEmpty)
+        #expect(policy.evaluate([alert("disk")], now: t0.addingTimeInterval(60), userIsLooking: false).count == 1) // still owed
+        let many = (0..<6).map { alert("stuck:\($0)") }
+        #expect(policy.evaluate(many, now: t0.addingTimeInterval(120), userIsLooking: false).count == AlertPolicy.maxPerHour - 1)
+        #expect(policy.evaluate(many, now: t0.addingTimeInterval(3800), userIsLooking: false).count == AlertPolicy.maxPerHour)
+    }
+
+    @Test func callersDontResetEachOthersTimers() {
+        var policy = AlertPolicy()
+        _ = policy.evaluate([alert("memory", persistence: 300)], now: t0, userIsLooking: false)
+        // A background protection check (which doesn't know about memory) runs meanwhile.
+        _ = policy.evaluate([], now: t0.addingTimeInterval(100), userIsLooking: false, keeping: policy.firstSeenIDs(excludingKinds: [.protection]))
+        #expect(policy.evaluate([alert("memory", persistence: 300)], now: t0.addingTimeInterval(301), userIsLooking: false).count == 1)
+    }
+
+    @Test func rememberedAcrossRelaunch() throws {
+        var policy = AlertPolicy()
+        _ = policy.evaluate([alert("battery", cooldown: 30 * 86_400)], now: t0, userIsLooking: false)
+        var restored = try JSONDecoder().decode(AlertPolicy.self, from: JSONEncoder().encode(policy))
+        #expect(restored.evaluate([alert("battery", cooldown: 30 * 86_400)], now: t0.addingTimeInterval(86_400), userIsLooking: false).isEmpty)
+    }
+
+    private func report(_ issues: [HealthIssue]) -> HealthReport { HealthReport(score: 50, issues: issues) }
+
+    @Test func buildsPlainAlertsFromHealth() {
+        let disk = HealthIssue(id: "disk", severity: .critical, title: "", detail: "", penalty: 0, section: .disk, metric: "4.2 GB left")
+        let memoryWarning = HealthIssue(id: "memory", severity: .warning, title: "", detail: "", penalty: 0, section: .memory)
+        let apps = ["zoom": AppSnapshotInfo(name: "Zoom", isCurrentApp: false), "self": AppSnapshotInfo(name: "Mac Vitals", isCurrentApp: true)]
+        let flags: [String: [AppInsights.Flag]] = ["zoom": [.stuckBusy(averageCPU: 98, minutes: 12)], "self": [.stuckBusy(averageCPU: 50, minutes: 10)]]
+        let alerts = AlertBuilder.conditions(report: report([disk, memoryWarning]), appFlags: flags, apps: apps,
+                                             topMemoryApp: nil, topCPUApp: nil, enabled: Set(AlertKind.allCases))
+        #expect(alerts.map(\.id).sorted() == ["disk", "stuck:zoom"]) // memory warning is too common to alert on; never ourselves
+        #expect(alerts.first { $0.id == "disk" }?.body.hasPrefix("4.2 GB left.") == true)
+        #expect(alerts.first { $0.id == "stuck:zoom" }?.appName == "Zoom")
+        // Switched off in Settings: nothing.
+        #expect(AlertBuilder.conditions(report: report([disk]), appFlags: [:], apps: [:], topMemoryApp: nil, topCPUApp: nil, enabled: []).isEmpty)
+    }
+
+    @Test func protectionAndUpdateAlerts() {
+        let checks = [
+            DefenceChecks.fileVault(output: "FileVault is Off."),
+            DefenceChecks.firewall(global: "Firewall is disabled. (State = 0)", stealth: ""), // a recommendation, not an alarm
+            DefenceChecks.gatekeeper(output: "assessments enabled"),
+        ]
+        #expect(AlertBuilder.protection(checks, enabled: true).map(\.id) == ["protection:fileVault"])
+
+        let app = UpdatableApp(path: "/Applications/Arc.app", name: "Arc", bundleID: nil, version: "1", build: nil, teamID: nil, source: .appStore)
+        let other = UpdatableApp(path: "/Applications/B.app", name: "B", bundleID: nil, version: "1", build: nil, teamID: nil, source: .appStore)
+        let checksByPath = [app.path: UpdateCheck(status: .available, latestVersion: "2", isCritical: true),
+                            other.path: UpdateCheck(status: .available, latestVersion: "3")]
+        let important = AlertBuilder.updates([app, other], checks: checksByPath, important: true, digest: false, now: t0)
+        #expect(important.map(\.id) == ["update:/Applications/Arc.app@2"])
+        let digest = AlertBuilder.updates([app, other], checks: checksByPath, important: false, digest: true, now: t0)
+        #expect(digest.first?.title == "2 app updates available")
     }
 }
