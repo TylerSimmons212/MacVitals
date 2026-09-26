@@ -124,6 +124,9 @@ Charts, Liquid Glass and large lists measured as cheap; animation was the cost.
 ## Known gaps / next
 
 - SSD wear level and total data written (Disk › Under the hood)
-- Clean Up extras: duplicates, a small honest maintenance set, Mail attachments
-- Privileged helper for root-owned processes (currently skipped), temperatures/fans (SMC)
+- Mail attachments in Junk
 - "Not Responding" detection for apps (needs Accessibility permission)
+- Checkup: one button that runs cleanup, protection and updates together
+- Duplicates: "keep both, save space" (turn true duplicates into APFS clones)
+- Privacy: browser history and cookies (careful: easy to wipe what people want)
+- Privileged helper for root-owned processes (currently skipped), temperatures/fans (SMC)
