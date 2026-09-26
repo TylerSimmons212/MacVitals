@@ -32,6 +32,7 @@ struct SectionGuide: Sendable {
         case .uninstaller: uninstaller
         case .startup: startup
         case .protection: protection
+        case .updates: updates
         }
     }
 
@@ -363,6 +364,31 @@ struct SectionGuide: Sendable {
             Term(term: "Verified developer", meaning: "Signed with a Developer ID or through the Mac App Store, so Apple knows who made it."),
             Term(term: "Ad hoc signature", meaning: "Signed on the machine that built it, not by a known developer. Normal for open-source tools."),
             Term(term: "Launch agent / daemon", meaning: "A program macOS starts automatically, for you (agent) or for every user (daemon)."),
+        ]
+    )
+
+    static let updates = SectionGuide(
+        title: "Understanding Updates",
+        summary: "Which of your apps have newer versions, checked at the source: each developer's own update feed, the App Store, and Homebrew.",
+        healthy: [
+            "Most apps up to date. Updates fix bugs and, often, security holes.",
+            "Apps marked \"updates themselves\" (Chrome, Microsoft, VS Code…) check when you open them.",
+        ],
+        culprits: [
+            "Apps you rarely open, which never get the chance to update themselves.",
+            "Automatic updates switched off in an app's settings.",
+            "Apps that need a newer macOS for their latest version.",
+        ],
+        fixes: [
+            "Update: Mac Vitals downloads it, checks it's signed by the same developer as the app you have, moves the old version to the Trash and reopens the app.",
+            "App Store apps open in the App Store, which does the update.",
+            "If macOS asks, allow App Management once so Mac Vitals can replace apps.",
+        ],
+        glossary: [
+            Term(term: "Update feed (Sparkle appcast)", meaning: "A list of versions a developer publishes. The app's own updater reads the same list."),
+            Term(term: "Same developer", meaning: "The update must carry the same Apple-issued Team ID as the installed app, or it isn't installed."),
+            Term(term: "Homebrew cask", meaning: "An app installed with Homebrew. Updated with brew upgrade."),
+            Term(term: "Critical update", meaning: "Marked important by the developer, usually a security fix."),
         ]
     )
 

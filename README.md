@@ -35,6 +35,7 @@ MacVitals/
     Cleanup/      cleanup scanner + model
     Protection/   built-in defences, startup-item and app signature audits
     SpaceLens/    getattrlistbulk size scanner, sunburst layout
+    Updates/      Sparkle appcasts, App Store lookup, Homebrew, verified installer
     Ports/        listening-port / dev-server scanner
   Views/
     Components/   glass cards, tile visuals, charts, visibility tracking
