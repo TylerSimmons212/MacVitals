@@ -149,7 +149,8 @@ if [ "$PUBLISH" = 1 ]; then
   git tag -f "v$VERSION"
   git push origin "v$VERSION"
   gh release create "v$VERSION" "$DMG" --repo "$REPO" --title "Mac Vitals $VERSION" --generate-notes
-  git add appcast.xml
+  # The project file carries the version too (regenerated above from project.yml).
+  git add appcast.xml MacVitals.xcodeproj/project.pbxproj
   git commit -m "Release $VERSION appcast"
   git push origin HEAD
   echo "🎉 Published. Installed copies will find it at their next daily check (or Check for Updates…)."
