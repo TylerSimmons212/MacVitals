@@ -96,7 +96,7 @@ struct UpdatesView: View {
 
     private var stats: some View {
         HStack(spacing: 16) {
-            DetailStat(label: "Apps checked", term: "Feeds, App Store, Homebrew",
+            DetailStat(label: "Apps checked", term: "All sources",
                        value: model.apps.isEmpty ? "—" : "\(model.checkedCount)",
                        caption: "of \(model.apps.count) installed", rolls: true)
             DetailStat(label: "From developers", term: "Sparkle feeds",
@@ -105,9 +105,9 @@ struct UpdatesView: View {
             DetailStat(label: "App Store", term: "Mac App Store",
                        value: "\(model.apps.filter { $0.source == .appStore }.count)",
                        caption: "Updated in the App Store")
-            DetailStat(label: "Update themselves", term: "Own updaters",
+            DetailStat(label: "Self-updating", term: "Own updaters",
                        value: "\(model.selfUpdating.count)",
-                       caption: "Chrome, Microsoft, Electron…")
+                       caption: "Update when you open them")
         }
         .fixedSize(horizontal: false, vertical: true)
     }
