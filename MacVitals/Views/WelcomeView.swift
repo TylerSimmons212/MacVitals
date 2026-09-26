@@ -15,10 +15,13 @@ struct WelcomeView: View {
                 .padding(.top, 30)
                 .padding(.bottom, 20)
 
-            PermissionList()
-                .padding(.horizontal, 18)
-                .padding(.vertical, 6)
-                .glassCard(cornerRadius: 22, padding: 0)
+            ScrollView {
+                PermissionList()
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 6)
+            }
+            .frame(height: 430)
+            .glassCard(cornerRadius: 22, padding: 0)
                 .padding(.horizontal, 28)
                 .entrance(delay: 0.12)
 

@@ -297,6 +297,12 @@ final class Permissions {
         }
     }
 
+    /// You turned App Management on yourself in System Settings (Mac Vitals can't see it).
+    func confirmAppManagementOn() {
+        UserDefaults.standard.set(true, forKey: Self.learnedAppManagementKey)
+        refresh(.appManagement)
+    }
+
     /// App Management can't be detected, so the helper offers "Done" and the next uninstall
     /// confirms it for real.
     private func confirmManually(_ kind: PermissionKind) {
