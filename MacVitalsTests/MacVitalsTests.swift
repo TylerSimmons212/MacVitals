@@ -2032,3 +2032,144 @@ struct SpaceLensTests {
         #expect(SpaceLensModel.caution(for: home + "/Movies/old.mov") == nil)
     }
 }
+
+@Suite("Updates")
+struct UpdateTests {
+    @Test func comparesVersionsLikeSparkle() {
+        #expect(VersionComparator.isNewer("1.10", than: "1.9"))
+        #expect(VersionComparator.isNewer("2.0", than: "2.0b3"))
+        #expect(VersionComparator.isNewer("2.0b3", than: "2.0b2"))
+        #expect(VersionComparator.isNewer("1.0.1", than: "1.0"))
+        #expect(VersionComparator.compare("1.2", "1.2.0") == 0)
+        #expect(!VersionComparator.isNewer("1.164.0", than: "1.166.0"))
+        #expect(VersionComparator.isNewer("87668", than: "86805"))
+        #expect(VersionComparator.isNewer("26149.1804.4788.5681", than: "26149.1804.4788.5680"))
+    }
+
+    private let feed = """
+    <?xml version="1.0" encoding="utf-8"?>
+    <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+    <channel>
+      <item>
+        <title>3.0 beta</title>
+        <sparkle:channel>beta</sparkle:channel>
+        <sparkle:version>300</sparkle:version>
+        <enclosure url="https://example.com/app-3.0b.zip" length="1"/>
+      </item>
+      <item>
+        <title>2.5</title>
+        <sparkle:version>250</sparkle:version>
+        <sparkle:shortVersionString>2.5</sparkle:shortVersionString>
+        <sparkle:minimumSystemVersion>99.0</sparkle:minimumSystemVersion>
+        <enclosure url="https://example.com/app-2.5.zip" length="10"/>
+      </item>
+      <item>
+        <title>2.1</title>
+        <pubDate>Wed, 16 Sep 2026 10:00:00 +0000</pubDate>
+        <sparkle:criticalUpdate/>
+        <sparkle:releaseNotesLink>https://example.com/notes</sparkle:releaseNotesLink>
+        <description><![CDATA[<h2>New</h2><ul><li>Faster &amp; smaller</li><li>Fixes</li></ul>]]></description>
+        <enclosure url="https://example.com/app-2.1.zip" sparkle:version="210" sparkle:shortVersionString="2.1" length="12345"/>
+        <sparkle:deltas>
+          <enclosure url="https://example.com/delta.delta" sparkle:version="210" sparkle:deltaFrom="200"/>
+        </sparkle:deltas>
+      </item>
+    </channel>
+    </rss>
+    """
+
+    private func app(version: String, build: String?) -> UpdatableApp {
+        UpdatableApp(path: "/Applications/Example.app", name: "Example", bundleID: "com.example", version: version,
+                     build: build, teamID: "ABCDE12345", source: .sparkle(feed: URL(string: "https://example.com/appcast.xml")!))
+    }
+
+    @Test func parsesAppcasts() {
+        let items = AppcastParser.parse(Data(feed.utf8))
+        #expect(items.count == 3)
+        let item = items[2]
+        #expect(item.version == "210" && item.shortVersion == "2.1")
+        #expect(item.downloadURL?.lastPathComponent == "app-2.1.zip") // not the delta
+        #expect(item.length == 12345)
+        #expect(item.isCritical)
+        #expect(item.releaseNotesURL?.absoluteString == "https://example.com/notes")
+        #expect(item.pubDate != nil)
+        #expect(Appcast.plainText(fromHTML: item.notesHTML ?? "") == "New\n• Faster & smaller\n• Fixes")
+    }
+
+    @Test func picksTheNewestReleaseThisMacCanRun() {
+        let items = AppcastParser.parse(Data(feed.utf8))
+        let (best, needsNewer) = Appcast.best(items, osVersion: "26.0")
+        #expect(best?.shortVersion == "2.1") // beta skipped, 2.5 needs macOS 99
+        #expect(needsNewer == "99.0")
+
+        let available = UpdateSources.evaluate(app(version: "2.0", build: "200"), items: items, osVersion: "26.0")
+        #expect(available.status == .available)
+        #expect(available.latestVersion == "2.1")
+        #expect(available.isCritical)
+        #expect(available.size == 12345)
+
+        let current = UpdateSources.evaluate(app(version: "2.1", build: "210"), items: items, osVersion: "26.0")
+        #expect(current.status == .needsNewerMacOS("99.0"))
+
+        let future = UpdateSources.evaluate(app(version: "2.1", build: "210"), items: items, osVersion: "99.1")
+        #expect(future.status == .available)
+        #expect(future.latestVersion == "2.5")
+    }
+
+    @Test func readsAppStoreAnswers() {
+        let apps = [
+            UpdatableApp(path: "/A.app", name: "A", bundleID: "com.a", version: "1.0", build: nil, teamID: nil, source: .appStore),
+            UpdatableApp(path: "/B.app", name: "B", bundleID: "com.b", version: "4.0.3", build: nil, teamID: nil, source: .appStore),
+            UpdatableApp(path: "/C.app", name: "C", bundleID: "com.c", version: "1.0", build: nil, teamID: nil, source: .appStore),
+        ]
+        let results: [[String: Any]] = [
+            ["bundleId": "com.a", "version": "1.2", "trackViewUrl": "https://apps.apple.com/us/app/a/id1", "releaseNotes": "Bug fixes"],
+            ["bundleId": "com.b", "version": "1.5.3"], // store lags behind: not an update
+        ]
+        let checks = UpdateSources.evaluateAppStore(apps, results: results)
+        #expect(checks["/A.app"]?.status == .available)
+        #expect(checks["/A.app"]?.storeURL?.scheme == "macappstore")
+        #expect(checks["/A.app"]?.notes == "Bug fixes")
+        #expect(checks["/B.app"]?.status == .upToDate)
+        #expect(checks["/B.app"]?.latestVersion == "4.0.3")
+        #expect(checks["/C.app"]?.status == .notCheckable)
+    }
+
+    @Test func homebrewRecordsAreTrustedOnlyWhenTheyMatchTheApp() {
+        let json: [String: Any] = ["casks": [[
+            "token": "android-studio", "version": "2026.1.4.7,quail4",
+            "installed": "2026.1.2.10,quail2,AI-261.25134", "auto_updates": true,
+            "artifacts": [["app": ["Android Studio.app"], "target": "/Applications/Android Studio.app"]],
+        ]]]
+        let casks = UpdateSources.parseBrewCasks(json)
+        let cask = casks["Android Studio.app"]!
+        #expect(cask.token == "android-studio" && cask.displayLatest == "2026.1.4.7")
+        let matching = UpdatableApp(path: "/Applications/Android Studio.app", name: "Android Studio", bundleID: nil, version: "2026.1",
+                                    build: "AI-261.25134", teamID: nil, source: .homebrew(token: "android-studio"))
+        #expect(UpdateSources.evaluateBrew(matching, cask: cask).status == .available)
+        // The app updated itself past Homebrew's record: don't claim an update.
+        let ahead = UpdatableApp(path: matching.path, name: matching.name, bundleID: nil, version: "2026.1",
+                                 build: "AI-999.1", teamID: nil, source: matching.source)
+        #expect(UpdateSources.evaluateBrew(ahead, cask: cask).status == .notCheckable)
+    }
+
+    @Test func recognizesDownloadFormats() {
+        #expect(UpdateInstaller.archiveKind("Arc-1.166.0-87668.zip") == "zip")
+        #expect(UpdateInstaller.archiveKind("App.dmg") == "dmg")
+        #expect(UpdateInstaller.archiveKind("app.tar.xz") == "tar")
+        #expect(UpdateInstaller.archiveKind("Installer.pkg") == "pkg")
+        #expect(UpdateInstaller.archiveKind("weird.bin") == nil)
+    }
+
+    @Test func refusesUpdatesFromAnotherDeveloper() {
+        // Calculator is signed by Apple, not by team ABCDE12345.
+        let installed = app(version: "0.1", build: "1")
+        #expect(throws: UpdateInstaller.Failure.wrongDeveloper) {
+            try UpdateInstaller.verify(URL(fileURLWithPath: "/System/Applications/Calculator.app"), replacing: installed)
+        }
+        let unsigned = UpdatableApp(path: "/x.app", name: "X", bundleID: nil, version: "1", build: nil, teamID: nil, source: .unknown)
+        #expect(throws: UpdateInstaller.Failure.cantVerifyInstalled) {
+            try UpdateInstaller.verify(URL(fileURLWithPath: "/System/Applications/Calculator.app"), replacing: unsigned)
+        }
+    }
+}

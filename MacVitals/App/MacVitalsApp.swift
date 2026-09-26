@@ -12,6 +12,7 @@ struct MacVitalsApp: App {
     @State private var storage = StorageModel()
     @State private var protection = ProtectionModel()
     @State private var spaceLens = SpaceLensModel()
+    @State private var updates = UpdatesModel()
     /// Read once at launch. (Reading it via @AppStorage in `body` isn't honored for launch behavior.)
     private let dashboardLaunchBehavior: SceneLaunchBehavior
 
@@ -37,6 +38,7 @@ struct MacVitalsApp: App {
                 .environment(storage)
                 .environment(protection)
                 .environment(spaceLens)
+                .environment(updates)
                 .environment(Permissions.shared)
                 .environment(AppActivity.shared)
                 .frame(minWidth: 1000, minHeight: 680)

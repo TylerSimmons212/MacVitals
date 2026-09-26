@@ -15,16 +15,20 @@ struct DetailStat: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            // Label and technical term each get exactly one line, so every card's header is the
+            // same height and the numbers line up across a row (no wrapping side by side).
+            VStack(alignment: .leading, spacing: 1) {
                 Text(label)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
-                if let term {
-                    Text(term.uppercased())
-                        .font(.system(size: 9, weight: .semibold))
-                        .tracking(0.5)
-                        .foregroundStyle(.tertiary)
-                }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                Text((term ?? " ").uppercased())
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(0.5)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
             if rolls {
                 RollingText(value, size: 24, weight: .semibold, color: tint, alignment: .leading, minimumScale: 0.7)

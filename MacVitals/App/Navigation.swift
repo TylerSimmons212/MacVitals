@@ -2,7 +2,7 @@ import SwiftUI
 
 enum DashboardSection: String, CaseIterable, Identifiable, Hashable, Sendable {
     case overview, cpu, memory, disk, network, battery
-    case apps, ports, protection
+    case apps, updates, ports, protection
     case cleanup, junk, spaceLens, uninstaller, startup
 
     var id: String { rawValue }
@@ -18,6 +18,7 @@ enum DashboardSection: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .apps: "Apps"
         case .ports: "Dev Servers"
         case .protection: "Protection"
+        case .updates: "Updates"
         case .cleanup: "Smart Clean"
         case .junk: "Junk"
         case .spaceLens: "Space Lens"
@@ -37,6 +38,7 @@ enum DashboardSection: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .apps: "square.stack.3d.up"
         case .ports: "server.rack"
         case .protection: "checkmark.shield"
+        case .updates: "arrow.down.app"
         case .cleanup: "sparkles"
         case .junk: "trash.circle"
         case .spaceLens: "chart.pie"
@@ -46,7 +48,7 @@ enum DashboardSection: String, CaseIterable, Identifiable, Hashable, Sendable {
     }
 
     static let vitals: [DashboardSection] = [.overview, .cpu, .memory, .disk, .network, .battery]
-    static let tools: [DashboardSection] = [.apps, .protection, .ports]
+    static let tools: [DashboardSection] = [.apps, .updates, .protection, .ports]
     /// Clean Up: diagnosis lives in the Vitals pages; removing things lives here.
     static let cleanUp: [DashboardSection] = [.cleanup, .junk, .spaceLens, .uninstaller, .startup]
 }

@@ -60,7 +60,7 @@ private struct RollingTextLayer: NSViewRepresentable {
         let animated = !context.transaction.disablesAnimations && !context.environment.accessibilityReduceMotion
         view.update(text: text,
                     font: RollingTextView.font(size: size, weight: weight, rounded: rounded),
-                    color: color.map { NSColor($0) } ?? .labelColor,
+                    color: color.map { NSColor($0) } ?? .textColor,
                     alignment: alignment,
                     animated: animated)
     }
@@ -85,7 +85,7 @@ final class RollingTextView: NSView {
     private var pendingAnimation = false
 
     private var font = NSFont.systemFont(ofSize: 13)
-    private var color = NSColor.labelColor
+    private var color = NSColor.textColor
     private var alignment: HorizontalAlignment = .center
     private var hasLaidOut = false
 

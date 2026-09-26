@@ -5,6 +5,7 @@ struct DashboardView: View {
     @Environment(Router.self) private var router
     @Environment(CleanupEngine.self) private var cleanup
     @Environment(ProtectionModel.self) private var protection
+    @Environment(UpdatesModel.self) private var updates
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.appearsActive) private var appearsActive
     @AppStorage(SettingsKeys.ambientMotion) private var ambientMotion = true
@@ -63,8 +64,7 @@ struct DashboardView: View {
             Section("Tools") {
                 ForEach(DashboardSection.tools) { section in
                     Label(section.title, systemImage: section.icon)
-                        .badge(section == .protection && protection.phase == .ready && protection.attentionCount > 0
-                               ? Text("\(protection.attentionCount)") : nil)
+                        .badge(toolsBadge(for: section))
                         .tag(section)
                 }
             }
@@ -75,6 +75,16 @@ struct DashboardView: View {
                         .tag(section)
                 }
             }
+        }
+    }
+
+    private func toolsBadge(for section: DashboardSection) -> Text? {
+        switch section {
+        case .protection where protection.phase == .ready && protection.attentionCount > 0:
+            Text("\(protection.attentionCount)")
+        case .updates where updates.phase == .ready && !updates.available.isEmpty:
+            Text("\(updates.available.count)")
+        default: nil
         }
     }
 
@@ -106,6 +116,7 @@ struct DashboardView: View {
         case .apps: AppsView()
         case .ports: PortsView()
         case .protection: ProtectionView()
+        case .updates: UpdatesView()
         case .cleanup: SmartCleanView()
         case .junk: JunkView()
         case .spaceLens: SpaceLensView()
