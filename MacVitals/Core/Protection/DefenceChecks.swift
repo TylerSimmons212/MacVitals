@@ -51,6 +51,7 @@ enum SettingsLink {
     static let lockScreen = url("com.apple.Lock-Screen-Settings.extension")
     static let sharing = url("com.apple.Sharing-Settings.extension")
     static let deviceManagement = url("com.apple.Profiles-Settings.extension")
+    static let screenTime = url("com.apple.Screen-Time-Settings.extension")
 }
 
 /// Reads each protection. Every reader is a thin shell call plus a pure parser (unit-tested).
@@ -254,19 +255,42 @@ enum DefenceChecks {
         let why = "An organization (work or school) can manage a Mac with device management and configuration profiles. Adware sometimes installs a profile to control your browser, so it's worth knowing what's there."
         let technical = "$ profiles status -type enrollment\n\(enrollment)\n$ profiles list\n\(profiles)"
         let enrolled = enrollment.contains("MDM enrollment: Yes")
-        let noProfiles = profiles.localizedCaseInsensitiveContains("no configuration profiles") || profiles.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let identifiers = profileIdentifiers(profiles)
+        // Screen Time (and apps that use it, like Opal or one sec) installs these itself.
+        // They can't be removed in Device Management; Screen Time puts them back.
+        let screenTime = identifiers.filter(isScreenTimeProfile)
+        let unknown = identifiers.filter { !isScreenTimeProfile($0) }
+        let noProfiles = identifiers.isEmpty
+            && (profiles.localizedCaseInsensitiveContains("no configuration profiles") || profiles.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         if enrolled {
             return DefenceCheck(id: .management, title: "Device management", status: .info,
                                 summary: "Your Mac is managed by an organization. That's normal for a work or school Mac.",
                                 why: why, fixLabel: "Review", fixURL: SettingsLink.deviceManagement, technical: technical)
         }
-        if !noProfiles {
+        if !unknown.isEmpty || (!noProfiles && identifiers.isEmpty) {
+            let count = max(unknown.count, 1)
             return DefenceCheck(id: .management, title: "Device management", status: .off,
-                                summary: "A configuration profile is installed, but your Mac isn't managed by an organization. If you didn't add it yourself, remove it.",
+                                summary: "\(count == 1 ? "A configuration profile is" : "\(count) configuration profiles are") installed, but your Mac isn't managed by an organization. If you didn't add \(count == 1 ? "it" : "them") yourself, remove \(count == 1 ? "it" : "them").",
                                 why: why, fixLabel: "Review", fixURL: SettingsLink.deviceManagement, technical: technical)
+        }
+        if !screenTime.isEmpty {
+            return DefenceCheck(id: .management, title: "Device management", status: .info,
+                                summary: "Screen Time restrictions are on (from Screen Time itself, or an app that uses it to block apps and sites). That's its own profile, not adware; it's managed in Screen Time.",
+                                why: why, fixLabel: "Screen Time", fixURL: SettingsLink.screenTime, technical: technical)
         }
         return DefenceCheck(id: .management, title: "Device management", status: .on,
                             summary: "Not managed by an organization, and no configuration profiles installed.", why: why, technical: technical)
+    }
+
+    /// "user[1] attribute: profileIdentifier: com.example.profile" lines from `profiles list`.
+    static func profileIdentifiers(_ output: String) -> [String] {
+        output.split(separator: "\n").compactMap { line in
+            line.firstMatch(of: /profileIdentifier:\s*(\S+)/).map { String($0.1) }
+        }
+    }
+
+    static func isScreenTimeProfile(_ identifier: String) -> Bool {
+        identifier.hasPrefix("com.apple.ManagedSettings") || identifier.hasPrefix("com.apple.screentime")
     }
 
     /// `softwareupdate --list` lists "* Label: …" lines, or says "No new software available."

@@ -1829,6 +1829,20 @@ struct ProtectionTests {
         #expect(DefenceChecks.management(enrollment: "MDM enrollment: Yes (User Approved)", profiles: "…").status == .info)
     }
 
+    @Test func screenTimeProfilesArentAdware() {
+        let screenTime = """
+        sutherland[1] attribute: profileIdentifier: com.apple.ManagedSettings.macOS.7BE22211-B222-4C33-9D44-110000000055
+        There are 1 user configuration profiles installed for 'sutherland'
+        """
+        let check = DefenceChecks.management(enrollment: "Enrolled via DEP: No\nMDM enrollment: No", profiles: screenTime)
+        #expect(check.status == .info)
+        #expect(check.summary.contains("Screen Time"))
+        // A Screen Time profile plus an unknown one: the unknown one is still flagged.
+        let mixed = screenTime + "\nsutherland[2] attribute: profileIdentifier: com.search.hijack"
+        #expect(DefenceChecks.management(enrollment: "MDM enrollment: No", profiles: mixed).status == .off)
+        #expect(DefenceChecks.profileIdentifiers(mixed) == ["com.apple.ManagedSettings.macOS.7BE22211-B222-4C33-9D44-110000000055", "com.search.hijack"])
+    }
+
     @Test func macOSUpdatesParsing() {
         #expect(DefenceChecks.macOSUpdates(output: "Software Update Tool\n\nFinding available software\nNo new software available.").status == .on)
         let pending = DefenceChecks.macOSUpdates(output: """
@@ -2024,6 +2038,13 @@ struct SpaceLensTests {
         #expect(root.fileCount == 2)
         #expect(root.isAncestor(of: a.children[0]))
         #expect(a.children[0].lineage.map(\.name) == ["root", "a", "a2"])
+    }
+
+    @Test func scanPositionInPlainWords() {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        #expect(SpaceLensModel.friendlyPath("/System/Volumes/Data" + home + "/Library/Mobile Documents/com~apple~CloudDocs", root: "/System/Volumes/Data") == "iCloud Drive")
+        #expect(SpaceLensModel.friendlyPath("/System/Volumes/Data" + home + "/Developer", root: "/System/Volumes/Data") == "~/Developer")
+        #expect(SpaceLensModel.friendlyPath("/System/Volumes/Data/Applications", root: "/System/Volumes/Data") == "/Applications")
     }
 
     @Test func cautionsBeforeRemovingRiskyThings() {

@@ -103,6 +103,14 @@ struct SpaceLensView: View {
                      ? "The first scan of a folder takes a minute or two on a full disk. iCloud Drive folders are the slowest."
                      : "About \(Int((model.progress ?? 0) * 100))% done.")
                     .font(.callout).foregroundStyle(.secondary)
+                if let folder = model.currentFolder {
+                    Text(folder == "iCloud Drive"
+                         ? "Now in iCloud Drive: lots of small files, so this part is slow even though it adds little space."
+                         : "Now in \(folder)")
+                        .font(.caption).foregroundStyle(.tertiary)
+                        .lineLimit(1).truncationMode(.middle)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Button("Cancel") { model.cancel() }
                     .buttonStyle(.glass).pointerStyle(.link).padding(.top, 4)
             }
