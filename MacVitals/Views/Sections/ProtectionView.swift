@@ -170,6 +170,7 @@ struct ProtectionView: View {
             } else if flagged.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
                     AllClearLine(text: "All \(model.startup.count) startup items \(model.startupComplete ? "" : "Mac Vitals can see ")come from Apple, verified developers, or a package manager like Homebrew. This is where Mac adware usually hides, and nothing looks out of place.")
+                    extensionsNote
                     completeListCallout
                 }
             } else {
@@ -182,6 +183,7 @@ struct ProtectionView: View {
                             StartupReviewRow(review: review) { router.section = .startup }
                         }
                     }
+                    extensionsNote
                     completeListCallout
                 }
             }
@@ -190,6 +192,24 @@ struct ProtectionView: View {
                 Button("Startup Items") { router.section = .startup }
                     .buttonStyle(.link).font(.callout).pointerStyle(.link)
             }
+        }
+    }
+
+    /// Adware usually arrives as a browser extension too.
+    @ViewBuilder
+    private var extensionsNote: some View {
+        let count = model.suspiciousExtensions.count
+        if count > 0 {
+            HStack(spacing: 10) {
+                Image(systemName: "puzzlepiece.extension.fill").foregroundStyle(.orange)
+                Text("\(count) browser extension\(count == 1 ? " was" : "s were") forced on by a policy or installed outside the store: \(ListFormatter.localizedString(byJoining: model.suspiciousExtensions.prefix(3).map(\.name))).")
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                Button("Review") { router.section = .extensions }
+                    .buttonStyle(.glass).controlSize(.small).pointerStyle(.link)
+            }
+            .padding(12)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color.orange.opacity(0.08)))
         }
     }
 
