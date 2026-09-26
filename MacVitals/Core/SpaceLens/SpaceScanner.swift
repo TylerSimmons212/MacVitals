@@ -88,6 +88,8 @@ final class SpaceScanner: @unchecked Sendable {
     let filesScanned = Atomic<Int>(0)
     let bytesScanned = Atomic<Int64>(0)
     let unreadableFolders = Atomic<Int>(0)
+    /// A folder near the top that's being scanned right now (for "Now scanning…").
+    let currentFolder = Mutex<String>("")
     private let cancelled = Atomic<Bool>(false)
     private let hardLinks = Mutex<Set<UInt64>>([])
 
@@ -127,6 +129,7 @@ final class SpaceScanner: @unchecked Sendable {
     /// Lists one folder, then recurses into its subfolders (in parallel near the top).
     private func fill(_ node: SpaceNode, path: String, device: dev_t, depth: Int, skipping: Set<String>) {
         guard !isCancelled else { return }
+        if depth > 0 && depth <= 3 { currentFolder.withLock { $0 = path } }
         let fd = open(path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
         guard fd >= 0 else {
             node.isUnreadable = true

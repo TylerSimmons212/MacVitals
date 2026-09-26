@@ -24,6 +24,11 @@ struct ProtectionView: View {
             }
         }
         .animation(.smooth, value: model.phase)
+        // Coming back from System Settings: check again so changes show right away.
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            guard model.phase == .ready, model.lastCheck.map({ Date().timeIntervalSince($0) > 5 }) ?? true else { return }
+            Task { await model.check() }
+        }
     }
 
     // MARK: Hero

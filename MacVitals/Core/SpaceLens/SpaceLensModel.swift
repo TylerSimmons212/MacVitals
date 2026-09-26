@@ -44,13 +44,20 @@ final class SpaceLensModel {
     private(set) var scanDuration: TimeInterval = 0
     /// Expected total, for a progress fraction (known for the whole Mac; estimated otherwise).
     private(set) var expectedBytes: Int64?
+    /// Files the last scan of this place found (progress follows files: that's where the time goes).
+    private(set) var expectedFiles: Int?
+    /// Where the scan is right now, in plain words.
+    private(set) var currentFolder: String?
     /// Bumped when the tree changes in place (items moved to the Trash) so views redraw.
     private(set) var revision = 0
 
     @ObservationIgnored private var scanner: SpaceScanner?
     @ObservationIgnored private var progressTask: Task<Void, Never>?
 
+    /// Time goes into the number of files, not their size (a million tiny files in iCloud Drive
+    /// take longer than one huge video), so follow files when we know how many to expect.
     var progress: Double? {
+        if let expectedFiles, expectedFiles > 0 { return min(0.99, Double(filesScanned) / Double(expectedFiles)) }
         guard let expectedBytes, expectedBytes > 0 else { return nil }
         return min(0.99, Double(bytesScanned) / Double(expectedBytes))
     }
@@ -63,8 +70,12 @@ final class SpaceLensModel {
         bytesScanned = 0
         unreadableFolders = 0
         let usedOnDisk = Self.usedSpace()
-        // Whole Mac: the disk's used space. Otherwise: what this folder measured last time.
-        expectedBytes = target == .wholeMac ? usedOnDisk : Self.lastSize(of: target.path)
+        // What this place measured last time. First whole-Mac scan: most of the used space (the
+        // rest is macOS itself and folders that can't be read, which a scan never reaches).
+        let last = Self.lastScan(of: target.path)
+        expectedFiles = last?.files
+        expectedBytes = last?.bytes ?? (target == .wholeMac ? usedOnDisk.map { $0 * 8 / 10 } : nil)
+        currentFolder = nil
 
         let scanner = SpaceScanner()
         self.scanner = scanner
@@ -75,6 +86,8 @@ final class SpaceLensModel {
                 self.filesScanned = scanner.filesScanned.load(ordering: .relaxed)
                 self.bytesScanned = scanner.bytesScanned.load(ordering: .relaxed)
                 self.unreadableFolders = scanner.unreadableFolders.load(ordering: .relaxed)
+                let folder = scanner.currentFolder.withLock { $0 }
+                self.currentFolder = folder.isEmpty ? nil : Self.friendlyPath(folder, root: target.path)
             }
         }
 
@@ -97,7 +110,7 @@ final class SpaceLensModel {
         bytesScanned = scanner.bytesScanned.load(ordering: .relaxed)
         unreadableFolders = scanner.unreadableFolders.load(ordering: .relaxed)
         scanDuration = Date().timeIntervalSince(started)
-        Self.rememberSize(tree.size, of: path)
+        Self.rememberScan(bytes: bytesScanned, files: filesScanned, of: path)
         scanDate = Date()
         root = tree
         current = tree
@@ -165,16 +178,30 @@ final class SpaceLensModel {
         return nil
     }
 
-    nonisolated private static let lastSizesKey = "spaceLens.lastSizes"
+    nonisolated private static let lastScansKey = "spaceLens.lastScans"
 
-    nonisolated static func lastSize(of path: String) -> Int64? {
-        (UserDefaults.standard.dictionary(forKey: lastSizesKey)?[path] as? NSNumber)?.int64Value
+    /// What the last scan of a place measured (bytes of files, number of files).
+    nonisolated static func lastScan(of path: String) -> (bytes: Int64, files: Int)? {
+        guard let entry = UserDefaults.standard.dictionary(forKey: lastScansKey)?[path] as? [String: NSNumber],
+              let bytes = entry["bytes"]?.int64Value, let files = entry["files"]?.intValue, files > 0 else { return nil }
+        return (bytes, files)
     }
 
-    nonisolated static func rememberSize(_ size: Int64, of path: String) {
-        var sizes = UserDefaults.standard.dictionary(forKey: lastSizesKey) ?? [:]
-        sizes[path] = NSNumber(value: size)
-        UserDefaults.standard.set(sizes, forKey: lastSizesKey)
+    nonisolated static func lastSize(of path: String) -> Int64? { lastScan(of: path)?.bytes }
+
+    nonisolated static func rememberScan(bytes: Int64, files: Int, of path: String) {
+        var scans = UserDefaults.standard.dictionary(forKey: lastScansKey) ?? [:]
+        scans[path] = ["bytes": NSNumber(value: bytes), "files": NSNumber(value: files)]
+        UserDefaults.standard.set(scans, forKey: lastScansKey)
+    }
+
+    /// "/System/Volumes/Data/Users/me/Library/Mobile Documents" → "iCloud Drive".
+    nonisolated static func friendlyPath(_ path: String, root: String) -> String {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        var shown = path.hasPrefix("/System/Volumes/Data/") ? String(path.dropFirst("/System/Volumes/Data".count)) : path
+        if shown.contains("/Library/Mobile Documents") { return "iCloud Drive" }
+        if shown.hasPrefix(home) { shown = "~" + shown.dropFirst(home.count) }
+        return shown
     }
 
     /// Space in use on the startup disk, counted the way the Finder does (including purgeable).
